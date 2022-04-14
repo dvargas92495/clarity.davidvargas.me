@@ -88,14 +88,6 @@ module "aws-serverless-backend" {
     directory = "api"
 }
 
-module "aws_clerk" {
-  source   = "dvargas92495/clerk/aws"
-  version  = "1.0.4"
-
-  zone_id  = module.aws_static_site.route53_zone_id
-  clerk_id = "asdf"
-}
-
 resource "github_actions_secret" "deploy_aws_access_key" {
   repository       = "clarity.davidvargas.me"
   secret_name      = "DEPLOY_AWS_ACCESS_KEY"
