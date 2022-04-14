@@ -4,8 +4,8 @@ on:
   push:
     branches: main
     paths:
-      - "package.json"
       - "app/**"
+      - "package.json"
       - ".github/workflows/main.yaml"
 
 env:
