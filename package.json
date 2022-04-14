@@ -1,0 +1,40 @@
+{
+  "name": "clarity.davidvargas.me",
+  "version": "0.0.0",
+  "description": "Description for clarity.davidvargas.me",
+  "repository": "dvargas92495/clarity.davidvargas.me",
+  "license": "MIT",
+  "sideEffects": false,
+  "scripts": {
+    "prebuild": "npm run generate:css -- --minify",
+    "build": "fuego build",
+    "format": "prettier --write \"**/*.tsx\"",
+    "generate:css": "tailwindcss -o ./app/tailwind.css",
+    "postinstall": "fuego postinstall",
+    "lint": "eslint . --ext .ts,.tsx",
+    "start": "concurrently \"npm:api\" \"npm:fe\"",
+    "tailwind": "npm run generate:css -- --watch"
+  },
+  "dependencies": {
+    "@dvargas92495/api": "0.7.10",
+    "@dvargas92495/ui": "0.52.6"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "0.5.0",
+    "@types/aws-lambda": "8.10.84",
+    "@types/node": "16.11.0",
+    "@types/react": "17.0.30",
+    "@types/react-dom": "17.0.9",
+    "@typescript-eslint/eslint-plugin": "5.0.0",
+    "@typescript-eslint/parser": "5.0.0",
+    "concurrently": "6.5.1",
+    "eslint": "8.0.1",
+    "fuegojs": "0.24.5",
+    "prettier": "2.4.1",
+    "tailwindcss": "3.0.24",
+    "ts-node": "10.3.0",
+    "tslint-config-prettier": "1.18.0",
+    "tslint-react-hooks": "2.2.2",
+    "typescript": "4.5.2"
+  }
+}

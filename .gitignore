@@ -1,0 +1,8 @@
+node_modules
+build
+dist
+out
+.env
+.cache
+_fuego
+/app/tailwind.css

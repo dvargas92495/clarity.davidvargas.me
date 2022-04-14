@@ -1,0 +1,41 @@
+name: Publish Web App
+on:
+  workflow_dispatch:
+  push:
+    branches: main
+    paths:
+      - "package.json"
+      - "app/**"
+      - ".github/workflows/main.yaml"
+
+env:
+  API_URL: https://api.clarity.davidvargas.me
+  AWS_ACCESS_KEY_ID: \${{ secrets.DEPLOY_AWS_ACCESS_KEY }}
+  AWS_SECRET_ACCESS_KEY: \${{ secrets.DEPLOY_AWS_ACCESS_SECRET }}
+  AWS_REGION: us-east-1
+  CLERK_API_KEY: ${{ secrets.CLERK_API_KEY }} 
+  CLERK_FRONTEND_API: clerk.davidvargas.me
+  CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+  DATABASE_URL: mysql://clarity_davidvargas_me:${{ secrets.MYSQL_PASSWORD }}@vargas-arts.c2sjnb5f4d57.us-east-1.rds.amazonaws.com:5432/clarity_davidvargas_me
+  HOST: https://app.davidvargas.me
+  IS_PRODUCTION: 1
+  STRIPE_PUBLIC_KEY: ${{ secrets.STRIPE_PUBLIC_KEY }}
+  STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js 14.17.6
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.17.6
+      - name: Install NPM 8
+        run: npm install -g npm@latest
+      - name: install
+        run: npm install
+      - name: build
+        run: npm run build
+      - name: deploy
+        run: npx fuego deploy
