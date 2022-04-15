@@ -1,8 +1,6 @@
-import remixAppLoader from "@dvargas92495/ui/utils/remixAppLoader.server";
 import React from "react";
 import { Link, Outlet } from "remix";
 
-export const loader = remixAppLoader;
 const PrivatePage = () => {
   return (
     <div className="min-w-full min-h-full flex">
