@@ -13,8 +13,8 @@ env:
   AWS_REGION: us-east-1
   CLERK_API_KEY: ${{ secrets.CLERK_API_KEY }}
   DATABASE_URL: mysql://clarity_davidvargas_me:${{ secrets.MYSQL_PASSWORD }}@vargas-arts.c2sjnb5f4d57.us-east-1.rds.amazonaws.com:5432/clarity_davidvargas_me
-  HOST: https://clarity.davidvargas.me
   IS_PRODUCTION: 1
+  ORIGIN: https://clarity.davidvargas.me
   STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
   STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
 

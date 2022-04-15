@@ -3,11 +3,7 @@ import { UserButton, useUser } from "@clerk/remix";
 import getMeta from "@dvargas92495/ui/utils/getMeta";
 import { Link, Outlet, useMatches } from "remix";
 
-const TABS = [
-  { id: "page" },
-  { id: "tab" },
-  { id: "hello" },
-];
+const TABS = [{ id: "assigned" }, { id: "views" }, { id: "roadmap" }];
 
 const UserPage: React.FunctionComponent = () => {
   const user = useUser();
@@ -15,28 +11,43 @@ const UserPage: React.FunctionComponent = () => {
   const currentTabPath = matches
     .slice(-1)[0]
     .pathname.replace(/^\/user\//, "")
-    .replace(/\\$/, "");
+    .replace(/^\//, "")
+    .replace(/\/$/, "");
   const currentTab = currentTabPath || "Dashboard";
   return (
-    <div className="min-h-full flex">
-      <nav className="bg-gray-800 min-h-full w-60 flex flex-col text-gray-200">
-        <div className="p-4 flex items-center">
-          <div className="flex-shrink-0 mr-4">
+    <div className="flex-grow flex">
+      <nav className="bg-clarity-50 min-h-full w-72 flex flex-col border-r-2 border-r-black border-opacity-10">
+        <div className="p-3 h-14 flex items-center">
+          <div className="flex items-center gap-3 hover:bg-clarity-100 cursor-pointer w-fit">
             <img
-              className="h-12 w-12"
+              className="h-5 w-5"
+              src="https://tailwindui.com/img/logos/workflow-mark-indigo-500.svg"
+              alt="Workflow"
+            />
+            <img
+              className="h-5 w-5"
+              src="https://tailwindui.com/img/logos/workflow-mark-indigo-500.svg"
+              alt="Workflow"
+            />
+            <img
+              className="h-5 w-5"
               src="https://tailwindui.com/img/logos/workflow-mark-indigo-500.svg"
               alt="Workflow"
             />
           </div>
-          <h2 className="text-white text-2xl font-bold">App</h2>
         </div>
         <div className="flex-grow">
           {TABS.map((tab) => (
-            <div key={tab.id} className="h-16 p-2">
+            <div
+              key={tab.id}
+              className="h-8 p-2 mb-1 text-sm font-medium opacity-50"
+            >
               <Link to={`/user/${tab.id}`}>
                 <div
-                  className={`p-2 min-h-full flex items-center ${
-                    currentTab === tab.id ? "bg-gray-900 rounded-md" : ""
+                  className={`cursor-pointer hover:bg-clarity-100 min-h-full flex items-center ${
+                    currentTab === tab.id
+                      ? "bg-clarity-200 text-black font-bold"
+                      : ""
                   } capitalize`}
                 >
                   <svg viewBox="0 0 24 24" className="h-4 w-4 stroke-gray-200">
@@ -53,15 +64,17 @@ const UserPage: React.FunctionComponent = () => {
             </div>
           ))}
         </div>
-        <div className="h-12 bg-gray-700 flex items-center px-4">
+        <div className="h-12 bg-clarity-50 flex items-center px-4 border-t-2 border-t-black border-opacity-10">
           <UserButton />
           <div className="ml-4">
             {user.user?.firstName} {user.user?.lastName}
           </div>
         </div>
       </nav>
-      <div className="p-8 flex-grow flex flex-col">
-        <h1 className="capitalize text-2xl font-bold mb-4">{currentTab}</h1>
+      <div className="flex-grow flex flex-col">
+        <div className="h-14 flex p-4 border-b-2 border-b-black border-opacity-10">
+          <h1 className="capitalize text-md font-bold">{currentTab}</h1>
+        </div>
         <div className="flex-grow">
           <Outlet />
         </div>
