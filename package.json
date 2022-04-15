@@ -7,7 +7,7 @@
   "sideEffects": false,
   "scripts": {
     "prebuild": "npm run generate:css -- --minify",
-    "build": "fuego build",
+    "build": "fuego build --readable",
     "format": "prettier --write \"**/*.tsx\"",
     "generate:css": "tailwindcss -o ./app/tailwind.css",
     "postinstall": "fuego postinstall",
