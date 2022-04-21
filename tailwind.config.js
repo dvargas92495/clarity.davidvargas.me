@@ -8,7 +8,8 @@ module.exports = {
       'clarity': {
         50: '#fbf7f8',
         100: "#ebe4e6",
-        200: "#765a6924",
+        200: '#e3dee0',
+        300: "#765a6924",
       },
       ...colors,
     }

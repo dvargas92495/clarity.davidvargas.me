@@ -4,19 +4,17 @@ import Table from "@dvargas92495/ui/components/Table";
 
 const ViewsPage = () => {
   return (
-    <div className="p-8">
-      <Table
-        className={"w-full"}
-        thClassName={"cursor-pointer p-3 font-medium opacity-50 text-left"}
-        theadClassName={""}
-        getTrClassName={() => ""}
-        getTdClassName={(index) =>
-          `p-3 border-t border-opacity-50 ${
-            index === 0 ? "opacity-1" : "opacity-50"
-          }`
-        }
-      />
-    </div>
+    <Table
+      className={"w-full"}
+      thClassName={"cursor-pointer p-3 font-medium opacity-50 text-left"}
+      theadClassName={""}
+      getTrClassName={() => ""}
+      getTdClassName={(index) =>
+        `p-3 border-t border-opacity-50 ${
+          index === 0 ? "opacity-1" : "opacity-50"
+        }`
+      }
+    />
   );
 };
 
