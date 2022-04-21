@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "remix";
+import { Link } from "@remix-run/react";
 
 const Home: React.FC = () => (
   <div className="bg-clarity-50 flex flex-col pt-60 items-center w-full">

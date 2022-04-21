@@ -1,7 +1,7 @@
 import React from "react";
 import { UserButton, useUser } from "@clerk/remix";
 import getMeta from "@dvargas92495/ui/utils/getMeta";
-import { Link, Outlet, useMatches } from "remix";
+import { Link, Outlet, useMatches } from "@remix-run/react";
 
 const TABS = [{ id: "assigned" }, { id: "views" }, { id: "roadmap" }];
 

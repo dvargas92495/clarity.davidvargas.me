@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, Outlet } from "remix";
+import { Link, Outlet } from "@remix-run/react";
 
 const PrivatePage = () => {
   return (
