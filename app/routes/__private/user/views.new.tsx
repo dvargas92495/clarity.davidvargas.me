@@ -4,10 +4,8 @@ import { Link, useLoaderData } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/server-runtime";
 import subDays from "date-fns/subDays";
 import dateFormat from "date-fns/format";
-import dateParse from "date-fns/parse";
 import addWeeks from "date-fns/addWeeks";
 import addDays from "date-fns/addDays";
-import addMonths from "date-fns/addMonths";
 import subYears from "date-fns/subYears";
 import startOfWeek from "date-fns/startOfWeek";
 
@@ -193,6 +191,21 @@ const ColorView = ({
     0
   );
   const [hoverDate, setHoverDate] = useState<string>();
+  const headers = Array(53)
+    .fill(null)
+    .map((_, w) => addWeeks(minDate, w))
+    .reduce(
+      (p, c) => {
+        const last = p.slice(-1)[0];
+        if (last.date.getMonth() !== c.getMonth()) {
+          p.push({ date: c, colSpan: 1 });
+        } else {
+          last.colSpan++;
+        }
+        return p;
+      },
+      [{ date: minDate, colSpan: 0 }]
+    );
   return (
     <div className="relative">
       <h2 className="text-normal mb-2 text-lg">{total} contributions</h2>
@@ -204,22 +217,13 @@ const ColorView = ({
           <thead>
             <tr className="text-xs font-normal text-left">
               <th />
-              {Array(13)
-                .fill(null)
-                .map((_, index) => {
-                  const date = addMonths(minDate, index);
-                  //   const colSpan = Array(5)
-                  //     .fill(null)
-                  //     .findIndex(
-                  //       (_, w) => addWeeks(date, w).getMonth() !== date.getMonth()
-                  //     );
-                  const colSpan = index === 0 ? 2 : 4;
-                  return (
-                    <th colSpan={colSpan} className={"pl-1"}>
-                      {dateFormat(date, "MMM")}
-                    </th>
-                  );
-                })}
+              {headers.map(({ date, colSpan }) => {
+                return (
+                  <th colSpan={colSpan} className={"pl-1"}>
+                    {dateFormat(date, "MMM")}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -280,6 +284,18 @@ const ColorView = ({
   );
 };
 
+const ForceView = () => {
+  return <div>Force View Coming Soon!</div>;
+};
+
+const KanbanView = () => {
+  return <div>Kanban View is aleady supported in Clarity!</div>;
+};
+
+const TableView = () => {
+  return <div>Table View is already supported in Clarity!</div>;
+};
+
 const NewViewPage = () => {
   const loaderData = useLoaderData();
 
@@ -288,9 +304,9 @@ const NewViewPage = () => {
       {loaderData.type === "color" && (
         <ColorView contributions={loaderData.contributions} />
       )}
-      {loaderData.type && <div>{}</div>}
-      {loaderData.type && <div>{}</div>}
-      {loaderData.type && <div>{}</div>}
+      {loaderData.type === "force" && <ForceView />}
+      {loaderData.type === "table" && <TableView />}
+      {loaderData.type === "kanban" && <KanbanView />}
     </>
   );
 };
@@ -312,7 +328,7 @@ const getData = () => {
 };
 
 export const loader: LoaderFunction = (args) => {
-  const params = new URLSearchParams(args.request.url);
+  const params = new URL(args.request.url).searchParams;
   return {
     type: params.get("type") || "color",
     contributions: getData(),

@@ -10,7 +10,7 @@ const TABS = [{ id: "assigned" }, { id: "views" }, { id: "roadmap" }];
 const Tab = ({ active, id }: { active: boolean; id: string }) => {
   const [showAdd, setShowAdd] = useState(false);
   return (
-    <div className="h-8 p-1 mb-1 text-sm font-medium opacity-50">
+    <div className="h-8 p-1 mb-1 text-md font-medium opacity-50">
       <Link to={`/user/${id}`}>
         <div
           className={`cursor-pointer hover:bg-clarity-100 min-h-full flex items-center p-1 ${
@@ -33,7 +33,7 @@ const Tab = ({ active, id }: { active: boolean; id: string }) => {
           </span>
           {showAdd && (
             <Link to={`/user/${id}/new`}>
-              <button className="mr-2 bg-clarity-100 cursor-pointer h-6 w-6 rounded-sm font-extrabold hover:bg-clarity-200 text-lg">
+              <button className="mr-2 bg-clarity-100 cursor-pointer h-4 w-4 rounded-sm font-extrabold hover:bg-clarity-200 text-lg">
                 +
               </button>
             </Link>
