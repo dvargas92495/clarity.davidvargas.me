@@ -1,13 +1,19 @@
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Menu, Popover, Transition } from "@headlessui/react";
 import { Link, useLoaderData } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/server-runtime";
+import Dialog from "@dvargas92495/ui/components/Dialog";
 import subDays from "date-fns/subDays";
 import dateFormat from "date-fns/format";
+import dateParse from "date-fns/parse";
 import addWeeks from "date-fns/addWeeks";
+import differenceInWeeks from "date-fns/differenceInWeeks";
 import addDays from "date-fns/addDays";
 import subYears from "date-fns/subYears";
+import subMonths from "date-fns/subMonths";
 import startOfWeek from "date-fns/startOfWeek";
+import { v4 } from "uuid";
+import { useToolbar } from "../../../contexts/ToolbarContext";
 
 const VIEW_TYPES = [
   {
@@ -104,7 +110,7 @@ const ButtonPopover = ({
               leaveFrom="opacity-100 translate-y-0"
               leaveTo="opacity-0 translate-y-1"
             >
-              <Popover.Panel className="absolute z-10 w-64 px-4 mt-3 transform -translate-x-full lg:max-w-3xl">
+              <Popover.Panel className="absolute z-40 w-64 px-4 mt-3 transform -translate-x-full lg:max-w-3xl">
                 {children}
               </Popover.Panel>
             </Transition>
@@ -119,6 +125,7 @@ type ClarityFilter = {
   field: string;
   condition: string;
   values: string[];
+  uuid: string;
 };
 
 const ButtomMenu = ({
@@ -142,7 +149,7 @@ const ButtomMenu = ({
         leaveFrom="transform opacity-100 scale-100"
         leaveTo="transform opacity-0 scale-95"
       >
-        <Menu.Items className="absolute right-0 mt-2 origin-top-right bg-white divide-y divide-gray-100 rounded-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+        <Menu.Items className="absolute right-0 z-40 mt-2 origin-top-right bg-white divide-y divide-gray-100 rounded-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
           {children.map((c, i) => (
             <Menu.Item key={i}>{c}</Menu.Item>
           ))}
@@ -167,7 +174,8 @@ const FilterItem = ({
       {...props}
       className={`${
         active ? "bg-gray-200" : "bg-transparent"
-      } p-2 flex justify-between text-sm opacity-80 cursor-pointer relative items-center whitespace-nowrap`}
+      } p-2 flex justify-between text-sm opacity-80 cursor-pointer relative items-center whitespace-nowrap clarity-filter`}
+      data-value={label}
     >
       {label}{" "}
       <div>
@@ -197,8 +205,11 @@ const FilterItem = ({
               <div className="bg-white rounded-sm shadow-lg">
                 {options.map((c, j) => (
                   <div
-                    className={"p-2 bg-white hover:bg-gray-200 cursor-pointer"}
+                    className={
+                      "p-2 bg-white hover:bg-gray-200 cursor-pointer clarity-condition"
+                    }
                     key={j}
+                    data-value={c}
                   >
                     {c}
                   </div>
@@ -212,9 +223,13 @@ const FilterItem = ({
   );
 };
 
-const IconDrawer = () => {
+const IconDrawer = ({
+  children,
+}: {
+  children: (props: { close: () => void }) => React.ReactNode;
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [filters, setFilters] = useState<ClarityFilter[]>([]);
+  const close = useCallback(() => setIsOpen(false), [setIsOpen]);
   return (
     <>
       <button
@@ -235,128 +250,255 @@ const IconDrawer = () => {
         </svg>
       </button>
       {isOpen && (
-        <div className="fixed inset-0 z-50">
-          <div className="bg-opacity-25 bg-gray-600 fixed -z-10 inset-0"></div>
+        <div className="fixed inset-0 z-20">
+          <div
+            className="bg-opacity-25 bg-gray-600 fixed -z-10 inset-0"
+            onClick={close}
+          />
           <div className="w-96 right-0 p-5 rounded-tl-xl rounded-bl-xl shadow-lg h-full bg-white fixed">
-            <div className="flex justify-between">
-              <span className="opacity-40">Filters</span>
-              <span>
-                <ButtomMenu
-                  buttonContent={
-                    <>
-                      <span className="opacity-40 text-lg mr-2">+</span> Add
-                      filter
-                    </>
-                  }
-                >
-                  {({ active }) => (
-                    <FilterItem
-                      active={active}
-                      label={"Created Date"}
-                      options={[
-                        "is this week",
-                        "is before...",
-                        "is after...",
-                        "is exactly...",
-                        "is not...",
-                      ]}
-                    />
-                  )}
-                  {({ active }) => (
-                    <FilterItem
-                      active={active}
-                      label={"Closed Date"}
-                      options={[
-                        "is this week",
-                        "is before...",
-                        "is after...",
-                        "is exactly...",
-                        "is not...",
-                      ]}
-                    />
-                  )}
-                  {({ active }) => (
-                    <FilterItem
-                      active={active}
-                      label={"Due Date"}
-                      options={[
-                        "is this week",
-                        "is overdue",
-                        "is before...",
-                        "is after...",
-                        "is exactly...",
-                        "is not...",
-                      ]}
-                    />
-                  )}
-                  {({ active }) => (
-                    <FilterItem
-                      active={active}
-                      label={"Priority"}
-                      options={["is...", "is not..."]}
-                    />
-                  )}
-                  {({ active }) => (
-                    <FilterItem
-                      active={active}
-                      label={"Parent"}
-                      options={["is...", "is not..."]}
-                    />
-                  )}
-                  {({ active }) => (
-                    <FilterItem
-                      active={active}
-                      label={"Cycle"}
-                      options={["is...", "is not..."]}
-                    />
-                  )}
-                  {({ active }) => (
-                    <FilterItem
-                      active={active}
-                      label={"Status"}
-                      options={["is...", "is not..."]}
-                    />
-                  )}
-                  {({ active }) => (
-                    <FilterItem
-                      active={active}
-                      label={"Tags"}
-                      options={["is...", "is not..."]}
-                    />
-                  )}
-                  {({ active }) => (
-                    <FilterItem
-                      active={active}
-                      label={"Reward"}
-                      options={[
-                        "has reward",
-                        "does not have reward",
-                        "is approved for payment",
-                        "is not approved for payment",
-                        "is paid",
-                        "is not paid",
-                      ]}
-                    />
-                  )}
-                  {({ active }) => (
-                    <FilterItem
-                      active={active}
-                      label={"Type"}
-                      options={["Any", "Initiatives", "Projects", "Tasks"]}
-                    />
-                  )}
-                </ButtomMenu>
-                <span
-                  className="opacity-50 ml-5 cursor-pointer"
-                  onClick={() => setIsOpen(false)}
-                >
-                  X
-                </span>
-              </span>
-            </div>
+            {children({ close })}
           </div>
         </div>
       )}
+    </>
+  );
+};
+
+const getOptionsFromFilter = (s: string) => {
+  if (s === "Created Date") {
+    const today = new Date();
+    return [
+      dateFormat(subMonths(today, 3), "yyyy/MM/dd"),
+      dateFormat(subMonths(today, 6), "yyyy/MM/dd"),
+      dateFormat(subMonths(today, 9), "yyyy/MM/dd"),
+      dateFormat(subMonths(today, 12), "yyyy/MM/dd"),
+    ];
+  }
+  return ["foo", "bar", "baz", "lollipop"];
+};
+
+const FilterDrawerContent = ({ close }: { close: () => void }) => {
+  const { data: filters = [], setData: setFilters } =
+    useToolbar<ClarityFilter[]>("filters");
+  const filterByUuid = useMemo(
+    () => Object.fromEntries(filters.map((f) => [f.uuid, f])),
+    [filters]
+  );
+  const [selectedFilter, setSelectedFilter] = useState("");
+  const selectedFilterValues = useMemo(
+    () => new Set(filterByUuid[selectedFilter]?.values || []),
+    [selectedFilter, filterByUuid]
+  );
+  return (
+    <>
+      <div className="flex justify-between mb-8">
+        <span className="opacity-40">Filters</span>
+        <span
+          onClick={(e) => {
+            const target = e.target as HTMLDivElement;
+            if (target.classList.contains("clarity-condition")) {
+              const condition = target.getAttribute("data-value") || "";
+              const filter = target.closest<HTMLDivElement>(".clarity-filter");
+              if (filter) {
+                const field = filter.getAttribute("data-value") || "";
+                setFilters([
+                  ...filters,
+                  { field, condition, values: [], uuid: v4() },
+                ]);
+              }
+            }
+          }}
+        >
+          <ButtomMenu
+            buttonContent={
+              <>
+                <span className="opacity-40 text-lg mr-2">+</span> Add filter
+              </>
+            }
+          >
+            {({ active }) => (
+              <FilterItem
+                active={active}
+                label={"Created Date"}
+                options={[
+                  "is this week",
+                  "is before...",
+                  "is after...",
+                  "is exactly...",
+                  "is not...",
+                ]}
+              />
+            )}
+            {({ active }) => (
+              <FilterItem
+                active={active}
+                label={"Closed Date"}
+                options={[
+                  "is this week",
+                  "is before...",
+                  "is after...",
+                  "is exactly...",
+                  "is not...",
+                ]}
+              />
+            )}
+            {({ active }) => (
+              <FilterItem
+                active={active}
+                label={"Due Date"}
+                options={[
+                  "is this week",
+                  "is overdue",
+                  "is before...",
+                  "is after...",
+                  "is exactly...",
+                  "is not...",
+                ]}
+              />
+            )}
+            {({ active }) => (
+              <FilterItem
+                active={active}
+                label={"Priority"}
+                options={["is...", "is not..."]}
+              />
+            )}
+            {({ active }) => (
+              <FilterItem
+                active={active}
+                label={"Parent"}
+                options={["is...", "is not..."]}
+              />
+            )}
+            {({ active }) => (
+              <FilterItem
+                active={active}
+                label={"Cycle"}
+                options={["is...", "is not..."]}
+              />
+            )}
+            {({ active }) => (
+              <FilterItem
+                active={active}
+                label={"Status"}
+                options={["is...", "is not..."]}
+              />
+            )}
+            {({ active }) => (
+              <FilterItem
+                active={active}
+                label={"Tags"}
+                options={["is...", "is not..."]}
+              />
+            )}
+            {({ active }) => (
+              <FilterItem
+                active={active}
+                label={"Reward"}
+                options={[
+                  "has reward",
+                  "does not have reward",
+                  "is approved for payment",
+                  "is not approved for payment",
+                  "is paid",
+                  "is not paid",
+                ]}
+              />
+            )}
+            {({ active }) => (
+              <FilterItem
+                active={active}
+                label={"Type"}
+                options={["Any", "Initiatives", "Projects", "Tasks"]}
+              />
+            )}
+          </ButtomMenu>
+          <span className="opacity-50 ml-5 cursor-pointer" onClick={close}>
+            X
+          </span>
+        </span>
+      </div>
+      {filters.map((f, i, a) => (
+        <React.Fragment key={i}>
+          <div className="rounded-md bg-clarity-100 p-4">
+            <h2 className="text-base font-bold mb-1">{f.field}</h2>
+            <p className="text-sm opacity-50 mb-0.5">{f.condition}</p>
+            <div className="flex items-center justify-between">
+              <div
+                className="bg-white rounded-md border border-clarity-300 p-2 flex-grow h-11 cursor-pointer"
+                onClick={() => setSelectedFilter(f.uuid)}
+              >
+                {f.values.map((v) => (
+                  <div
+                    key={v}
+                    className={
+                      "font-medium text-sm bg-clarity-100 rounded-sm border border-clarity-300 inline-block mr-3"
+                    }
+                  >
+                    {v}
+                  </div>
+                ))}
+              </div>
+              <span
+                className="opacity-50 ml-5 cursor-pointer mx-2"
+                onClick={() =>
+                  setFilters(filters.filter((fil) => fil.uuid !== f.uuid))
+                }
+              >
+                X
+              </span>
+            </div>
+          </div>
+          {i < a.length - 1 && (
+            <div className="capitalize my-4 w-full opacity-75 text-center">
+              AND
+            </div>
+          )}
+        </React.Fragment>
+      ))}
+      <Dialog
+        isOpen={!!selectedFilter}
+        onClose={() => setSelectedFilter("")}
+        title={`Filter ${filterByUuid[selectedFilter]?.field}`}
+        contentClassName="inline-block max-w-md my-8 overflow-hidden text-left align-middle transition-all transform bg-gray-800 text-white shadow-xl rounded-md"
+        titleClassName="text-lg font-medium leading-6 px-6 py-3"
+      >
+        <input className="border-y border-y-black p-6 text-white bg-transparent focus:outline-none w-full" />
+        <div className={"h-96 w-96 overflow-auto"}>
+          {getOptionsFromFilter(filterByUuid[selectedFilter]?.field).map(
+            (o, i) => (
+              <div key={i} className={"py-3 px-6 hover:bg-gray-700"}>
+                <input
+                  type={"checkbox"}
+                  placeholder={`Select ${filterByUuid[selectedFilter]?.field}s to include...`}
+                  defaultChecked={selectedFilterValues.has(o)}
+                  onChange={(e) => {
+                    const { checked } = e.target;
+                    if (checked) {
+                      setFilters(
+                        filters.map((f) =>
+                          f.uuid === selectedFilter
+                            ? { ...f, values: f.values.concat(o) }
+                            : f
+                        )
+                      );
+                    } else {
+                      setFilters(
+                        filters.map((f) =>
+                          f.uuid === selectedFilter
+                            ? { ...f, values: f.values.filter((v) => v !== o) }
+                            : f
+                        )
+                      );
+                    }
+                  }}
+                />
+                <span className="ml-2">{o}</span>
+              </div>
+            )
+          )}
+        </div>
+      </Dialog>
     </>
   );
 };
@@ -406,7 +548,9 @@ const Toolbar = () => {
           </div>
         </div>
       </ButtonPopover>
-      <IconDrawer />
+      <IconDrawer>
+        {({ close }) => <FilterDrawerContent close={close} />}
+      </IconDrawer>
     </>
   );
 };
@@ -416,15 +560,25 @@ const ColorView = ({
 }: {
   contributions: ReturnType<typeof getData>;
 }) => {
+  const { data: filters = [] } = useToolbar<ClarityFilter[]>("filters");
+
   const total = Object.values(contributions).reduce((p, c) => p + c, 0);
   const maxDate = new Date();
-  const minDate = startOfWeek(subYears(maxDate, 1));
+  const minDate = (
+    filters.find(
+      (f) => f.field === "Created Date" && f.condition === "is after..."
+    )?.values || []
+  ).reduce((p, c) => {
+    const date = dateParse(c, "yyyy/MM/dd", maxDate);
+    return date.valueOf() > p.valueOf() ? date : p;
+  }, startOfWeek(subYears(maxDate, 1)));
   const maxContribution = Object.values(contributions).reduce(
     (p, c) => (c > p ? c : p),
     0
   );
   const [hoverDate, setHoverDate] = useState<string>();
-  const headers = Array(53)
+  const numColumns = differenceInWeeks(maxDate, minDate);
+  const headers = Array(numColumns)
     .fill(null)
     .map((_, w) => addWeeks(minDate, w))
     .reduce(
@@ -453,7 +607,7 @@ const ColorView = ({
               {headers.map(({ date, colSpan }, index) => {
                 return (
                   <th colSpan={colSpan} className={"pl-1"} key={index}>
-                    {dateFormat(date, "MMM")}
+                    {colSpan > 1 ? dateFormat(date, "MMM") : ""}
                   </th>
                 );
               })}
@@ -470,7 +624,7 @@ const ColorView = ({
                       {day === 3 && "Wed"}
                       {day === 5 && "Fri"}
                     </td>
-                    {Array(53)
+                    {Array(numColumns)
                       .fill(null)
                       .map((_, week) => {
                         const date = addWeeks(addDays(minDate, day), week);
