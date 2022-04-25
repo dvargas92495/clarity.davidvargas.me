@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Popover, Transition } from "@headlessui/react";
+import { Menu, Popover, Transition } from "@headlessui/react";
 import { Link, useLoaderData } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/server-runtime";
 import subDays from "date-fns/subDays";
@@ -74,10 +74,12 @@ const VIEW_TYPES = [
   },
 ];
 
-const IconPopover = ({
-  Icon,
+const ButtonPopover = ({
+  ButtonContent,
   children,
-}: React.PropsWithChildren<{ Icon: React.FC<{ className: string }> }>) => {
+}: React.PropsWithChildren<{
+  ButtonContent: React.FC<{ className: string }>;
+}>) => {
   return (
     <span>
       <Popover className="relative">
@@ -86,7 +88,7 @@ const IconPopover = ({
             <Popover.Button
               className={`p-2 rounded-md inline-flex items-center text-base font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75`}
             >
-              <Icon
+              <ButtonContent
                 className={`text-opacity-60 ${
                   open ? "" : "text-opacity-70"
                 } ml-2 h-5 w-5 group-hover:text-opacity-80 transition ease-in-out duration-150`}
@@ -113,11 +115,257 @@ const IconPopover = ({
   );
 };
 
+type ClarityFilter = {
+  field: string;
+  condition: string;
+  values: string[];
+};
+
+const ButtomMenu = ({
+  buttonContent,
+  children,
+}: {
+  buttonContent: React.ReactElement;
+  children: Parameters<typeof Menu.Item>[0]["children"][];
+}) => {
+  return (
+    <Menu as="div" className="relative inline-block text-left">
+      <Menu.Button className="inline-flex justify-center items-center w-full px-4 pb-1 text-sm font-medium rounded-md bg-opacity-20 hover:bg-gray-200 border">
+        {buttonContent}
+      </Menu.Button>
+      <Transition
+        as={React.Fragment}
+        enter="transition ease-out duration-100"
+        enterFrom="transform opacity-0 scale-95"
+        enterTo="transform opacity-100 scale-100"
+        leave="transition ease-in duration-75"
+        leaveFrom="transform opacity-100 scale-100"
+        leaveTo="transform opacity-0 scale-95"
+      >
+        <Menu.Items className="absolute right-0 mt-2 origin-top-right bg-white divide-y divide-gray-100 rounded-sm shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+          {children.map((c, i) => (
+            <Menu.Item key={i}>{c}</Menu.Item>
+          ))}
+        </Menu.Items>
+      </Transition>
+    </Menu>
+  );
+};
+
+const FilterItem = ({
+  active,
+  label,
+  options,
+  ...props
+}: {
+  active: boolean;
+  label: string;
+  options: string[];
+}) => {
+  return (
+    <div
+      {...props}
+      className={`${
+        active ? "bg-gray-200" : "bg-transparent"
+      } p-2 flex justify-between text-sm opacity-80 cursor-pointer relative items-center whitespace-nowrap`}
+    >
+      {label}{" "}
+      <div>
+        <svg
+          viewBox="64 64 896 896"
+          focusable="false"
+          data-icon="right"
+          width="1em"
+          height="1em"
+          fill="currentColor"
+          aria-hidden="true"
+          className="opacity-50 ml-2"
+        >
+          <path d="M765.7 486.8L314.9 134.7A7.97 7.97 0 00302 141v77.3c0 4.9 2.3 9.6 6.1 12.6l360 281.1-360 281.1c-3.9 3-6.1 7.7-6.1 12.6V883c0 6.7 7.7 10.4 12.9 6.3l450.8-352.1a31.96 31.96 0 000-50.4z" />
+        </svg>
+        {active && (
+          <Transition
+            as={React.Fragment}
+            enter="transition ease-out duration-100"
+            enterFrom="transform opacity-0 scale-95"
+            enterTo="transform opacity-100 scale-100"
+            leave="transition ease-in duration-75"
+            leaveFrom="transform opacity-100 scale-100"
+            leaveTo="transform opacity-0 scale-95"
+          >
+            <div className="absolute right-full pr-2 top-0 pt-1 origin-top-right bg-transparentwhitespace-nowrap">
+              <div className="bg-white rounded-sm shadow-lg">
+                {options.map((c, j) => (
+                  <div
+                    className={"p-2 bg-white hover:bg-gray-200 cursor-pointer"}
+                    key={j}
+                  >
+                    {c}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Transition>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const IconDrawer = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [filters, setFilters] = useState<ClarityFilter[]>([]);
+  return (
+    <>
+      <button
+        className={`p-2 rounded-md inline-flex items-center text-base font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75`}
+        onClick={() => setIsOpen(true)}
+      >
+        <svg
+          viewBox="64 64 896 896"
+          focusable="false"
+          data-icon="filter"
+          width="1em"
+          height="1em"
+          fill="currentColor"
+          aria-hidden="true"
+          className={`text-opacity-60 ml-2 h-5 w-5 group-hover:text-opacity-80 transition ease-in-out duration-150`}
+        >
+          <path d="M880.1 154H143.9c-24.5 0-39.8 26.7-27.5 48L349 597.4V838c0 17.7 14.2 32 31.8 32h262.4c17.6 0 31.8-14.3 31.8-32V597.4L907.7 202c12.2-21.3-3.1-48-27.6-48zM603.4 798H420.6V642h182.9v156zm9.6-236.6l-9.5 16.6h-183l-9.5-16.6L212.7 226h598.6L613 561.4z" />
+        </svg>
+      </button>
+      {isOpen && (
+        <div className="fixed inset-0 z-50">
+          <div className="bg-opacity-25 bg-gray-600 fixed -z-10 inset-0"></div>
+          <div className="w-96 right-0 p-5 rounded-tl-xl rounded-bl-xl shadow-lg h-full bg-white fixed">
+            <div className="flex justify-between">
+              <span className="opacity-40">Filters</span>
+              <span>
+                <ButtomMenu
+                  buttonContent={
+                    <>
+                      <span className="opacity-40 text-lg mr-2">+</span> Add
+                      filter
+                    </>
+                  }
+                >
+                  {({ active }) => (
+                    <FilterItem
+                      active={active}
+                      label={"Created Date"}
+                      options={[
+                        "is this week",
+                        "is before...",
+                        "is after...",
+                        "is exactly...",
+                        "is not...",
+                      ]}
+                    />
+                  )}
+                  {({ active }) => (
+                    <FilterItem
+                      active={active}
+                      label={"Closed Date"}
+                      options={[
+                        "is this week",
+                        "is before...",
+                        "is after...",
+                        "is exactly...",
+                        "is not...",
+                      ]}
+                    />
+                  )}
+                  {({ active }) => (
+                    <FilterItem
+                      active={active}
+                      label={"Due Date"}
+                      options={[
+                        "is this week",
+                        "is overdue",
+                        "is before...",
+                        "is after...",
+                        "is exactly...",
+                        "is not...",
+                      ]}
+                    />
+                  )}
+                  {({ active }) => (
+                    <FilterItem
+                      active={active}
+                      label={"Priority"}
+                      options={["is...", "is not..."]}
+                    />
+                  )}
+                  {({ active }) => (
+                    <FilterItem
+                      active={active}
+                      label={"Parent"}
+                      options={["is...", "is not..."]}
+                    />
+                  )}
+                  {({ active }) => (
+                    <FilterItem
+                      active={active}
+                      label={"Cycle"}
+                      options={["is...", "is not..."]}
+                    />
+                  )}
+                  {({ active }) => (
+                    <FilterItem
+                      active={active}
+                      label={"Status"}
+                      options={["is...", "is not..."]}
+                    />
+                  )}
+                  {({ active }) => (
+                    <FilterItem
+                      active={active}
+                      label={"Tags"}
+                      options={["is...", "is not..."]}
+                    />
+                  )}
+                  {({ active }) => (
+                    <FilterItem
+                      active={active}
+                      label={"Reward"}
+                      options={[
+                        "has reward",
+                        "does not have reward",
+                        "is approved for payment",
+                        "is not approved for payment",
+                        "is paid",
+                        "is not paid",
+                      ]}
+                    />
+                  )}
+                  {({ active }) => (
+                    <FilterItem
+                      active={active}
+                      label={"Type"}
+                      options={["Any", "Initiatives", "Projects", "Tasks"]}
+                    />
+                  )}
+                </ButtomMenu>
+                <span
+                  className="opacity-50 ml-5 cursor-pointer"
+                  onClick={() => setIsOpen(false)}
+                >
+                  X
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
 const Toolbar = () => {
   return (
     <>
-      <IconPopover
-        Icon={({ className }) => (
+      <ButtonPopover
+        ButtonContent={({ className }) => (
           <svg
             viewBox="64 64 896 896"
             focusable="false"
@@ -157,23 +405,8 @@ const Toolbar = () => {
             </div>
           </div>
         </div>
-      </IconPopover>
-      <button
-        className={`p-2 rounded-md inline-flex items-center text-base font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75`}
-      >
-        <svg
-          viewBox="64 64 896 896"
-          focusable="false"
-          data-icon="filter"
-          width="1em"
-          height="1em"
-          fill="currentColor"
-          aria-hidden="true"
-          className={`text-opacity-60 ml-2 h-5 w-5 group-hover:text-opacity-80 transition ease-in-out duration-150`}
-        >
-          <path d="M880.1 154H143.9c-24.5 0-39.8 26.7-27.5 48L349 597.4V838c0 17.7 14.2 32 31.8 32h262.4c17.6 0 31.8-14.3 31.8-32V597.4L907.7 202c12.2-21.3-3.1-48-27.6-48zM603.4 798H420.6V642h182.9v156zm9.6-236.6l-9.5 16.6h-183l-9.5-16.6L212.7 226h598.6L613 561.4z" />
-        </svg>
-      </button>
+      </ButtonPopover>
+      <IconDrawer />
     </>
   );
 };
@@ -209,7 +442,7 @@ const ColorView = ({
   return (
     <div className="relative">
       <h2 className="text-normal mb-2 text-lg">{total} contributions</h2>
-      <div className="border py-2 rounded-md">
+      <div className="border py-2 rounded-md w-min">
         <table
           className="mx-2 pt-1 text-center h-full"
           onMouseLeave={() => setHoverDate("")}
@@ -217,9 +450,9 @@ const ColorView = ({
           <thead>
             <tr className="text-xs font-normal text-left">
               <th />
-              {headers.map(({ date, colSpan }) => {
+              {headers.map(({ date, colSpan }, index) => {
                 return (
-                  <th colSpan={colSpan} className={"pl-1"}>
+                  <th colSpan={colSpan} className={"pl-1"} key={index}>
                     {dateFormat(date, "MMM")}
                   </th>
                 );

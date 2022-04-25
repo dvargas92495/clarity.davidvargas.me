@@ -55,7 +55,7 @@ const UserPage: React.FunctionComponent = () => {
   const currentTab = currentTabPath || "Dashboard";
   const handle = matches.map((m) => m.handle).find((t) => !!t);
   return (
-    <div className="flex-grow flex">
+    <div className="flex-grow flex overflow-hidden">
       <nav className="bg-clarity-50 min-h-full w-72 flex flex-col border-r-2 border-r-black border-opacity-10">
         <div className="p-3 h-14 flex items-center">
           <div className="flex items-center gap-3 hover:bg-clarity-100 cursor-pointer w-fit">
@@ -88,13 +88,19 @@ const UserPage: React.FunctionComponent = () => {
           </div>
         </div>
       </nav>
-      <div className="flex-grow flex flex-col">
+      <div className="flex-grow flex flex-col overflow-x-hidden">
         <div className="h-14 flex p-4 border-b-2 border-b-black border-opacity-10 justify-between">
-          <h1 className="capitalize text-md font-bold">{handle?.header || currentTab}</h1>
-          <span className="flex gap-4 items-center">{handle?.Toolbar && <handle.Toolbar />}</span>
+          <h1 className="capitalize text-md font-bold">
+            {handle?.header || currentTab}
+          </h1>
+          <span className="flex gap-4 items-center">
+            {handle?.Toolbar && <handle.Toolbar />}
+          </span>
         </div>
-        <div className="flex-grow p-8">
-          <Outlet />
+        <div className="flex-grow overflow-x-auto">
+          <div className="p-8 w-min">
+            <Outlet />
+          </div>
         </div>
       </div>
     </div>

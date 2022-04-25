@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@dvargas92495/api": "0.7.10",
-    "@dvargas92495/ui": "^0.53.5"
+    "@dvargas92495/ui": "^0.53.6"
   },
   "devDependencies": {
     "@tailwindcss/forms": "0.5.0",

@@ -3,8 +3,8 @@ import { Link, Outlet } from "@remix-run/react";
 
 const PrivatePage = () => {
   return (
-    <div className="min-w-full min-h-full flex">
-      <div className="flex flex-col min-h-full shadow bg-clarity-50 w-14 border-r-2 border-r-black border-opacity-10">
+    <div className="min-w-full min-h-full flex overflow-hidden">
+      <div className="flex flex-col min-h-full shadow bg-clarity-50 w-14 border-r-2 border-r-black border-opacity-10 px-1">
         <div className="flex flex-col items-center h-full overflow-y-auto pb-16">
           <a
             href={"/profile"}
