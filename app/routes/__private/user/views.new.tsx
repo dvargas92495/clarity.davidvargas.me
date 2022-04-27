@@ -3,7 +3,6 @@ import { Menu, Popover, Transition } from "@headlessui/react";
 import { Link, useLoaderData } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/server-runtime";
 import Dialog from "@dvargas92495/ui/components/Dialog";
-import subDays from "date-fns/subDays";
 import dateFormat from "date-fns/format";
 import dateParse from "date-fns/parse";
 import addWeeks from "date-fns/addWeeks";
@@ -14,6 +13,7 @@ import subMonths from "date-fns/subMonths";
 import startOfWeek from "date-fns/startOfWeek";
 import { v4 } from "uuid";
 import { useToolbar } from "../../../contexts/ToolbarContext";
+import getWorkData from "../../../data/getWorkData.server";
 
 const VIEW_TYPES = [
   {
@@ -558,7 +558,7 @@ const Toolbar = () => {
 const ColorView = ({
   contributions,
 }: {
-  contributions: ReturnType<typeof getData>;
+  contributions: Awaited<ReturnType<typeof getContributionsData>>;
 }) => {
   const { data: filters = [] } = useToolbar<ClarityFilter[]>("filters");
 
@@ -698,28 +698,22 @@ const NewViewPage = () => {
   );
 };
 
-const getData = () => {
-  return Object.fromEntries(
-    Array(100)
-      .fill(null)
-      .map(() => {
-        return [
-          dateFormat(
-            subDays(new Date(), Math.floor(Math.random() * 365)),
-            "yyyy-MM-dd"
-          ),
-          Math.ceil(Math.random() * 50),
-        ];
-      })
+const getContributionsData = () => {
+  return getWorkData().then((data) =>
+    data.reduce((p, c) => {
+      const key = dateFormat(new Date(c.date), "yyyy-MM-dd");
+      p[key] = (p[key] || 0) + 1;
+      return p;
+    }, {} as Record<string, number>)
   );
 };
 
 export const loader: LoaderFunction = (args) => {
   const params = new URL(args.request.url).searchParams;
-  return {
+  return getContributionsData().then((contributions) => ({
     type: params.get("type") || "color",
-    contributions: getData(),
-  };
+    contributions,
+  }));
 };
 
 export const handle = {
