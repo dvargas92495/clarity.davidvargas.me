@@ -18,7 +18,7 @@
     "tailwind": "npm run generate:css -- --watch"
   },
   "dependencies": {
-    "@dvargas92495/api": "0.7.10",
+    "@dvargas92495/api": "^0.8.2",
     "@dvargas92495/ui": "^0.54.2"
   },
   "devDependencies": {
@@ -32,7 +32,7 @@
     "@typescript-eslint/parser": "5.0.0",
     "concurrently": "6.5.1",
     "eslint": "8.0.1",
-    "fuegojs": "0.26.8",
+    "fuegojs": "^0.27.1",
     "prettier": "2.4.1",
     "tailwindcss": "3.0.24",
     "ts-node": "10.3.0",
