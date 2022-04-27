@@ -1,4 +1,4 @@
-name: Migrate Data
+name: Migrate All Data
 on:
   workflow_dispatch:
   push:

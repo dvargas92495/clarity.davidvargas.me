@@ -5,6 +5,7 @@ on:
     branches: main
     paths:
       - "app/**"
+      - "server/**"
       - "package.json"
       - ".github/workflows/main.yaml"
 
