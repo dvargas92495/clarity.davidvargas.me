@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from "react";
 import { Menu, Popover, Transition } from "@headlessui/react";
 import { Link, useLoaderData } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/server-runtime";
+import NumberInput from "@dvargas92495/ui/components/NumberInput";
 import Dialog from "@dvargas92495/ui/components/Dialog";
 import dateFormat from "date-fns/format";
 import dateParse from "date-fns/parse";
@@ -10,7 +11,7 @@ import differenceInWeeks from "date-fns/differenceInWeeks";
 import addDays from "date-fns/addDays";
 import subYears from "date-fns/subYears";
 import subMonths from "date-fns/subMonths";
-import startOfWeek from "date-fns/startOfWeek";
+import isAfter from "date-fns/isAfter";
 import { v4 } from "uuid";
 import { useToolbar } from "../../../contexts/ToolbarContext";
 import getWorkData from "../../../data/getWorkData.server";
@@ -265,7 +266,7 @@ const IconDrawer = ({
 };
 
 const getOptionsFromFilter = (s: string) => {
-  if (s === "Created Date") {
+  if (s === "Closed Date") {
     const today = new Date();
     return [
       dateFormat(subMonths(today, 3), "yyyy/MM/dd"),
@@ -273,6 +274,8 @@ const getOptionsFromFilter = (s: string) => {
       dateFormat(subMonths(today, 9), "yyyy/MM/dd"),
       dateFormat(subMonths(today, 12), "yyyy/MM/dd"),
     ];
+  } else if (s === "Type") {
+    return [];
   }
   return ["foo", "bar", "baz", "lollipop"];
 };
@@ -288,6 +291,11 @@ const FilterDrawerContent = ({ close }: { close: () => void }) => {
   const selectedFilterValues = useMemo(
     () => new Set(filterByUuid[selectedFilter]?.values || []),
     [selectedFilter, filterByUuid]
+  );
+  const selectedFilterField = filterByUuid[selectedFilter]?.field;
+  const selectedFilterOptions = useMemo(
+    () => getOptionsFromFilter(selectedFilterField),
+    [selectedFilterField]
   );
   return (
     <>
@@ -422,32 +430,36 @@ const FilterDrawerContent = ({ close }: { close: () => void }) => {
         <React.Fragment key={i}>
           <div className="rounded-md bg-clarity-100 p-4">
             <h2 className="text-base font-bold mb-1">{f.field}</h2>
-            <p className="text-sm opacity-50 mb-0.5">{f.condition}</p>
-            <div className="flex items-center justify-between">
-              <div
-                className="bg-white rounded-md border border-clarity-300 p-2 flex-grow h-11 cursor-pointer"
-                onClick={() => setSelectedFilter(f.uuid)}
-              >
-                {f.values.map((v) => (
-                  <div
-                    key={v}
-                    className={
-                      "font-medium text-sm bg-clarity-100 rounded-sm border border-clarity-300 inline-block mr-3"
-                    }
-                  >
-                    {v}
-                  </div>
-                ))}
-              </div>
+            <p className="text-sm opacity-50 mb-0.5 flex space-between items-center w-full">
+              <span className="flex-grow">{f.condition}</span>
               <span
-                className="opacity-50 ml-5 cursor-pointer mx-2"
+                className="ml-5 cursor-pointer mx-2 hover:bg-gray-400 rounded-full w-5 text-center"
                 onClick={() =>
                   setFilters(filters.filter((fil) => fil.uuid !== f.uuid))
                 }
               >
                 X
               </span>
-            </div>
+            </p>
+            {!!getOptionsFromFilter(f.field).length && (
+              <div className="flex items-center justify-between">
+                <div
+                  className="bg-white rounded-md border border-clarity-300 p-2 flex-grow h-11 cursor-pointer"
+                  onClick={() => setSelectedFilter(f.uuid)}
+                >
+                  {f.values.map((v) => (
+                    <div
+                      key={v}
+                      className={
+                        "font-medium text-sm bg-clarity-100 rounded-sm border border-clarity-300 inline-block mr-3"
+                      }
+                    >
+                      {v}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           {i < a.length - 1 && (
             <div className="capitalize my-4 w-full opacity-75 text-center">
@@ -459,44 +471,42 @@ const FilterDrawerContent = ({ close }: { close: () => void }) => {
       <Dialog
         isOpen={!!selectedFilter}
         onClose={() => setSelectedFilter("")}
-        title={`Filter ${filterByUuid[selectedFilter]?.field}`}
+        title={`Filter ${selectedFilterField}`}
         contentClassName="inline-block max-w-md my-8 overflow-hidden text-left align-middle transition-all transform bg-gray-800 text-white shadow-xl rounded-md"
         titleClassName="text-lg font-medium leading-6 px-6 py-3"
       >
         <input className="border-y border-y-black p-6 text-white bg-transparent focus:outline-none w-full" />
         <div className={"h-96 w-96 overflow-auto"}>
-          {getOptionsFromFilter(filterByUuid[selectedFilter]?.field).map(
-            (o, i) => (
-              <div key={i} className={"py-3 px-6 hover:bg-gray-700"}>
-                <input
-                  type={"checkbox"}
-                  placeholder={`Select ${filterByUuid[selectedFilter]?.field}s to include...`}
-                  defaultChecked={selectedFilterValues.has(o)}
-                  onChange={(e) => {
-                    const { checked } = e.target;
-                    if (checked) {
-                      setFilters(
-                        filters.map((f) =>
-                          f.uuid === selectedFilter
-                            ? { ...f, values: f.values.concat(o) }
-                            : f
-                        )
-                      );
-                    } else {
-                      setFilters(
-                        filters.map((f) =>
-                          f.uuid === selectedFilter
-                            ? { ...f, values: f.values.filter((v) => v !== o) }
-                            : f
-                        )
-                      );
-                    }
-                  }}
-                />
-                <span className="ml-2">{o}</span>
-              </div>
-            )
-          )}
+          {selectedFilterOptions.map((o, i) => (
+            <div key={i} className={"py-3 px-6 hover:bg-gray-700"}>
+              <input
+                type={"checkbox"}
+                placeholder={`Select ${selectedFilterField}s to include...`}
+                defaultChecked={selectedFilterValues.has(o)}
+                onChange={(e) => {
+                  const { checked } = e.target;
+                  if (checked) {
+                    setFilters(
+                      filters.map((f) =>
+                        f.uuid === selectedFilter
+                          ? { ...f, values: f.values.concat(o) }
+                          : f
+                      )
+                    );
+                  } else {
+                    setFilters(
+                      filters.map((f) =>
+                        f.uuid === selectedFilter
+                          ? { ...f, values: f.values.filter((v) => v !== o) }
+                          : f
+                      )
+                    );
+                  }
+                }}
+              />
+              <span className="ml-2">{o}</span>
+            </div>
+          ))}
         </div>
       </Dialog>
     </>
@@ -561,21 +571,68 @@ const ColorView = ({
   contributions: Awaited<ReturnType<typeof getContributionsData>>;
 }) => {
   const { data: filters = [] } = useToolbar<ClarityFilter[]>("filters");
-
-  const total = Object.values(contributions).reduce((p, c) => p + c, 0);
-  const maxDate = new Date();
-  const minDate = (
-    filters.find(
-      (f) => f.field === "Created Date" && f.condition === "is after..."
-    )?.values || []
-  ).reduce((p, c) => {
-    const date = dateParse(c, "yyyy/MM/dd", maxDate);
-    return date.valueOf() > p.valueOf() ? date : p;
-  }, startOfWeek(subYears(maxDate, 1)));
   const maxContribution = Object.values(contributions).reduce(
-    (p, c) => (c > p ? c : p),
+    (p, c) => (c.length > p ? c.length : p),
     0
   );
+  const defaultThresholds = useMemo(
+    () => [
+      { level: Math.ceil(maxContribution* 0.8), background: "#22c55e" },
+      { level: Math.ceil(maxContribution * 0.6), background: "#16a34a" },
+      { level: Math.ceil(maxContribution * 0.4), background: "#15803d" },
+      { level: Math.ceil(maxContribution * 0.2), background: "#166534" },
+      { level: 0, background: "#14532d" },
+    ],
+    [maxContribution]
+  );
+  const [colorThresholds, setColorThresholds] = useState(defaultThresholds);
+  const filteredContributions = useMemo(() => {
+    return Object.fromEntries(
+      Object.entries(contributions)
+        .map(([k, works]) => {
+          return [
+            k,
+            works.filter((w) =>
+              filters.every((f) => {
+                switch (f.field) {
+                  case "Closed Date":
+                    switch (f.condition) {
+                      case "is after...":
+                        const comparison = f.values.reduce((p, c) => {
+                          const date = dateParse(c, "yyy/MM/dd", new Date(0));
+                          return date.valueOf() > p.valueOf() ? date : p;
+                        }, new Date(0));
+                        return isAfter(
+                          comparison,
+                          dateParse(k, "yyyy-MM-dd", new Date(0))
+                        );
+                      default:
+                        return true;
+                    }
+                  case "Type":
+                    switch (f.condition) {
+                      case "Any":
+                        return true;
+                      default:
+                        return `${w.type}s` === f.condition;
+                    }
+                  default:
+                    return true;
+                }
+              })
+            ),
+          ] as const;
+        })
+        .filter(([, v]) => !!v.length)
+    );
+  }, [filters, contributions]);
+
+  const total = Object.values(filteredContributions).reduce(
+    (p, c) => p + c.length,
+    0
+  );
+  const maxDate = new Date();
+  const minDate = subYears(maxDate, 1);
   const [hoverDate, setHoverDate] = useState<string>();
   const numColumns = differenceInWeeks(maxDate, minDate);
   const headers = Array(numColumns)
@@ -629,10 +686,10 @@ const ColorView = ({
                       .map((_, week) => {
                         const date = addWeeks(addDays(minDate, day), week);
                         const key = dateFormat(date, "yyyy-MM-dd");
-                        const contribution = contributions[key] || 0;
-                        const colorGradient =
-                          1000 -
-                          Math.ceil((contribution / maxContribution) * 5) * 100;
+                        const count = filteredContributions[key]?.length || 0;
+                        const { background } = colorThresholds.find(
+                          (c) => count > c.level
+                        ) || { background: "#00000040" };
                         return (
                           <td
                             key={week}
@@ -640,19 +697,8 @@ const ColorView = ({
                             className={"p-0.5"}
                           >
                             <div
-                              className={`h-4 w-4 rounded-sm ${
-                                colorGradient === 500
-                                  ? `bg-green-500`
-                                  : colorGradient === 600
-                                  ? `bg-green-600`
-                                  : colorGradient === 700
-                                  ? `bg-green-700`
-                                  : colorGradient === 800
-                                  ? `bg-green-800`
-                                  : colorGradient === 900
-                                  ? `bg-green-900`
-                                  : "bg-black bg-opacity-25"
-                              }`}
+                              className={`h-4 w-4 rounded-sm`}
+                              style={{ background }}
                             />
                           </td>
                         );
@@ -665,8 +711,40 @@ const ColorView = ({
       </div>
       <span>
         {hoverDate &&
-          `${contributions[hoverDate] || 0} Contributions on ${hoverDate}`}
+          `${
+            filteredContributions[hoverDate]?.length || 0
+          } Contributions on ${hoverDate}`}
       </span>
+      <div className="mt-12">
+        <h1 className="text-2xl font-bold mb-8">View Options</h1>
+        <h2 className={"text-lg font-semibold mb-3"}> Color Thresholds</h2>
+        {defaultThresholds.map((c, i) => (
+          <div key={i} className={"mb-2 w-32 flex gap-4 items-center"}>
+            <NumberInput
+              defaultValue={c.level}
+              onChange={(e) =>
+                setColorThresholds(
+                  colorThresholds.map((ct, j) =>
+                    i === j ? { ...ct, level: Number(e.target.value) } : ct
+                  )
+                )
+              }
+              disabled={i === defaultThresholds.length - 1}
+            />
+            <input
+              defaultValue={c.background}
+              onChange={(e) =>
+                setColorThresholds(
+                  colorThresholds.map((ct, j) =>
+                    i === j ? { ...ct, background: e.target.value } : ct
+                  )
+                )
+              }
+              type={"color"}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -698,13 +776,19 @@ const NewViewPage = () => {
   );
 };
 
+type Work = Awaited<ReturnType<typeof getWorkData>>;
+
 const getContributionsData = () => {
   return getWorkData().then((data) =>
     data.reduce((p, c) => {
       const key = dateFormat(new Date(c.date), "yyyy-MM-dd");
-      p[key] = (p[key] || 0) + 1;
+      if (p[key]) {
+        p[key].push(c);
+      } else {
+        p[key] = [c];
+      }
       return p;
-    }, {} as Record<string, number>)
+    }, {} as Record<string, Work>)
   );
 };
 
