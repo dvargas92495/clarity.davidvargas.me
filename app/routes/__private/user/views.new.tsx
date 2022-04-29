@@ -692,7 +692,7 @@ const ColorView = ({
                         ) || { background: "#00000040" };
                         return (
                           <td
-                            key={week}
+                            key={`${week}-${count}`}
                             onMouseEnter={() => setHoverDate(key)}
                             className={"p-0.5"}
                           >
