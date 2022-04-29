@@ -15,6 +15,7 @@ import isAfter from "date-fns/isAfter";
 import { v4 } from "uuid";
 import { useToolbar } from "../../../contexts/ToolbarContext";
 import getWorkData from "../../../data/getWorkData.server";
+import startOfWeek from "date-fns/startOfWeek";
 
 const VIEW_TYPES = [
   {
@@ -581,7 +582,7 @@ const ColorView = ({
       { level: Math.ceil(maxContribution * 0.6), background: "#16a34a" },
       { level: Math.ceil(maxContribution * 0.4), background: "#15803d" },
       { level: Math.ceil(maxContribution * 0.2), background: "#166534" },
-      { level: 0, background: "#14532d" },
+      { level: 1, background: "#14532d" },
     ],
     [maxContribution]
   );
@@ -632,7 +633,7 @@ const ColorView = ({
     0
   );
   const maxDate = new Date();
-  const minDate = subYears(maxDate, 1);
+  const minDate = subYears(startOfWeek(maxDate), 1);
   const [hoverDate, setHoverDate] = useState<string>();
   const numColumns = differenceInWeeks(maxDate, minDate);
   const headers = Array(numColumns)
@@ -688,11 +689,11 @@ const ColorView = ({
                         const key = dateFormat(date, "yyyy-MM-dd");
                         const count = filteredContributions[key]?.length || 0;
                         const { background } = colorThresholds.find(
-                          (c) => count > c.level
+                          (c) => count >= c.level
                         ) || { background: "#00000040" };
                         return (
                           <td
-                            key={`${week}-${count}`}
+                            key={week}
                             onMouseEnter={() => setHoverDate(key)}
                             className={"p-0.5"}
                           >
