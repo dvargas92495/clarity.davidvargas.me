@@ -577,7 +577,7 @@ const ColorView = ({
   );
   const defaultThresholds = useMemo(
     () => [
-      { level: Math.ceil(maxContribution* 0.8), background: "#22c55e" },
+      { level: Math.ceil(maxContribution * 0.8), background: "#22c55e" },
       { level: Math.ceil(maxContribution * 0.6), background: "#16a34a" },
       { level: Math.ceil(maxContribution * 0.4), background: "#15803d" },
       { level: Math.ceil(maxContribution * 0.2), background: "#166534" },
@@ -599,12 +599,12 @@ const ColorView = ({
                     switch (f.condition) {
                       case "is after...":
                         const comparison = f.values.reduce((p, c) => {
-                          const date = dateParse(c, "yyy/MM/dd", new Date(0));
+                          const date = dateParse(c, "yyyy/MM/dd", new Date(0));
                           return date.valueOf() > p.valueOf() ? date : p;
                         }, new Date(0));
                         return isAfter(
-                          comparison,
-                          dateParse(k, "yyyy-MM-dd", new Date(0))
+                          dateParse(k, "yyyy-MM-dd", new Date(0)),
+                          comparison
                         );
                       default:
                         return true;
@@ -709,13 +709,13 @@ const ColorView = ({
           </tbody>
         </table>
       </div>
-      <span>
+      <div className={"h-6"}>
         {hoverDate &&
           `${
             filteredContributions[hoverDate]?.length || 0
           } Contributions on ${hoverDate}`}
-      </span>
-      <div className="mt-12">
+      </div>
+      <div className="mt-6">
         <h1 className="text-2xl font-bold mb-8">View Options</h1>
         <h2 className={"text-lg font-semibold mb-3"}> Color Thresholds</h2>
         {defaultThresholds.map((c, i) => (
