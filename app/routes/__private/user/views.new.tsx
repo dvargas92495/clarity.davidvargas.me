@@ -633,9 +633,9 @@ const ColorView = ({
     0
   );
   const maxDate = new Date();
-  const minDate = subYears(startOfWeek(maxDate), 1);
+  const minDate = startOfWeek(subYears(maxDate, 1));
   const [hoverDate, setHoverDate] = useState<string>();
-  const numColumns = differenceInWeeks(maxDate, minDate);
+  const numColumns = differenceInWeeks(maxDate, minDate) + 1;
   const headers = Array(numColumns)
     .fill(null)
     .map((_, w) => addWeeks(minDate, w))
