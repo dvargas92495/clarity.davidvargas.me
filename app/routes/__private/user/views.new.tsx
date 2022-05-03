@@ -203,7 +203,7 @@ const FilterItem = ({
             leaveFrom="transform opacity-100 scale-100"
             leaveTo="transform opacity-0 scale-95"
           >
-            <div className="absolute right-full pr-2 top-0 pt-1 origin-top-right bg-transparentwhitespace-nowrap">
+            <div className="absolute right-full pr-2 top-0 pt-1 origin-top-right bg-transparent whitespace-nowrap">
               <div className="bg-white rounded-sm shadow-lg">
                 {options.map((c, j) => (
                   <div
@@ -578,10 +578,10 @@ const ColorView = ({
   );
   const defaultThresholds = useMemo(
     () => [
-      { level: Math.ceil(maxContribution * 0.8), background: "#22c55e" },
-      { level: Math.ceil(maxContribution * 0.6), background: "#16a34a" },
-      { level: Math.ceil(maxContribution * 0.4), background: "#15803d" },
-      { level: Math.ceil(maxContribution * 0.2), background: "#166534" },
+      { level: 15, background: "#22c55e" },
+      { level: 6, background: "#16a34a" },
+      { level: 3, background: "#15803d" },
+      { level: 2, background: "#166534" },
       { level: 1, background: "#14532d" },
     ],
     [maxContribution]
@@ -633,7 +633,8 @@ const ColorView = ({
     0
   );
   const maxDate = new Date();
-  const minDate = startOfWeek(subYears(maxDate, 1));
+  const defaultMinDate = startOfWeek(subYears(maxDate, 1)).valueOf();
+  const [minDate, setMinDate] = useState(defaultMinDate);
   const [hoverDate, setHoverDate] = useState<string>();
   const numColumns = differenceInWeeks(maxDate, minDate) + 1;
   const headers = Array(numColumns)
@@ -649,11 +650,72 @@ const ColorView = ({
         }
         return p;
       },
-      [{ date: minDate, colSpan: 0 }]
+      [{ date: new Date(minDate), colSpan: 0 }]
     );
+
+  const ColorViewCell = ({ week, day }: { week: number; day: number }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const date = addWeeks(addDays(minDate, day), week);
+    const key = dateFormat(date, "yyyy-MM-dd");
+    const count = filteredContributions[key]?.length || 0;
+    const { background } = colorThresholds.find((c) => count >= c.level) || {
+      background: "#00000020",
+    };
+    return (
+      <td
+        onMouseEnter={() => setIsOpen(true)}
+        onMouseMove={() => setIsOpen(true)}
+        onMouseLeave={() => setIsOpen(false)}
+        className={"p-0.5 relative"}
+      >
+        <div
+          className={`h-4 w-4 rounded-sm hover:border hover:border-opacity-75 hover:border-black`}
+          style={{ background }}
+        />
+        <Transition
+          as={React.Fragment}
+          show={isOpen}
+          enter="transition ease-out duration-100"
+          enterFrom="transform opacity-0 scale-95"
+          enterTo="transform opacity-100 scale-100"
+          leave="transition ease-in duration-75"
+          leaveFrom="transform opacity-100 scale-100"
+          leaveTo="transform opacity-0 scale-95"
+        >
+          <div className={`absolute z-30 bottom-full`}>
+            <div className="bg-white rounded-md shadow-lg px-2 py-1 whitespace-nowrap relative -left-1/2">
+              <span className="text-sm opacity-75">{count} contributions</span>{" "}
+              <span className="text-sm opacity-50">{key}</span>
+            </div>
+          </div>
+        </Transition>
+      </td>
+    );
+  };
   return (
-    <div className="relative">
-      <h2 className="text-normal mb-2 text-lg">{total} contributions</h2>
+    <div className="relative w-min">
+      <div className="px-1 flex space-between items-center mb-2">
+        <h2 className="text-normal mb-2 text-lg flex-grow">
+          {total} total contributions
+        </h2>
+        <select
+          onChange={(e) => setMinDate(Number(e.target.value))}
+          className={
+            "bg-black bg-opacity-10 rounded-md border-none text-sm py-1 pl-2 pr-8 cursor-pointer outline-none"
+          }
+        >
+          <option value={defaultMinDate}>Last 12 months</option>
+          <option value={startOfWeek(subMonths(maxDate, 9)).valueOf()}>
+            Last 9 months
+          </option>
+          <option value={startOfWeek(subMonths(maxDate, 6)).valueOf()}>
+            Last 6 months
+          </option>
+          <option value={startOfWeek(subMonths(maxDate, 3)).valueOf()}>
+            Last 3 months
+          </option>
+        </select>
+      </div>
       <div className="border py-2 rounded-md w-min">
         <table
           className="mx-2 pt-1 text-center h-full"
@@ -684,26 +746,9 @@ const ColorView = ({
                     </td>
                     {Array(numColumns)
                       .fill(null)
-                      .map((_, week) => {
-                        const date = addWeeks(addDays(minDate, day), week);
-                        const key = dateFormat(date, "yyyy-MM-dd");
-                        const count = filteredContributions[key]?.length || 0;
-                        const { background } = colorThresholds.find(
-                          (c) => count >= c.level
-                        ) || { background: "#00000040" };
-                        return (
-                          <td
-                            key={week}
-                            onMouseEnter={() => setHoverDate(key)}
-                            className={"p-0.5"}
-                          >
-                            <div
-                              className={`h-4 w-4 rounded-sm`}
-                              style={{ background }}
-                            />
-                          </td>
-                        );
-                      })}
+                      .map((_, week) => (
+                        <ColorViewCell key={week} week={week} day={day} />
+                      ))}
                   </tr>
                 );
               })}
