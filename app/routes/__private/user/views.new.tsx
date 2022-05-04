@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Menu, Popover, Transition } from "@headlessui/react";
 import { Link, useLoaderData } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/server-runtime";
@@ -16,6 +16,7 @@ import { v4 } from "uuid";
 import { useToolbar } from "../../../contexts/ToolbarContext";
 import getWorkData from "../../../data/getWorkData.server";
 import startOfWeek from "date-fns/startOfWeek";
+import getWorkConnections from "../../../data/getWorkConnections.server";
 
 const VIEW_TYPES = [
   {
@@ -785,8 +786,18 @@ const ColorView = ({
   );
 };
 
-const ForceView = () => {
-  return <div>Force View Coming Soon!</div>;
+const ForceView = ({
+  data,
+}: {
+  data: Awaited<ReturnType<typeof getWorkConnections>>;
+}) => {
+  const [loaded, setLoaded] = useState<React.ReactNode>();
+  useEffect(() => {
+    import("react-force-graph").then(({ ForceGraph2D }) =>
+      setLoaded(<ForceGraph2D graphData={data} />)
+    );
+  }, [setLoaded, data]);
+  return <div>{loaded || "Loading..."}</div>;
 };
 
 const KanbanView = () => {
@@ -805,7 +816,9 @@ const NewViewPage = () => {
       {loaderData.type === "color" && (
         <ColorView contributions={loaderData.contributions} />
       )}
-      {loaderData.type === "force" && <ForceView />}
+      {loaderData.type === "force" && (
+        <ForceView data={loaderData.connections} />
+      )}
       {loaderData.type === "table" && <TableView />}
       {loaderData.type === "kanban" && <KanbanView />}
     </>
@@ -828,12 +841,13 @@ const getContributionsData = () => {
   );
 };
 
-export const loader: LoaderFunction = (args) => {
+export const loader: LoaderFunction = async (args) => {
   const params = new URL(args.request.url).searchParams;
-  return getContributionsData().then((contributions) => ({
+  return {
     type: params.get("type") || "color",
-    contributions,
-  }));
+    contributions: await getContributionsData(),
+    connections: await getWorkConnections(),
+  };
 };
 
 export const handle = {
