@@ -578,11 +578,11 @@ const ColorView = ({
   );
   const defaultThresholds = useMemo(
     () => [
-      { level: 15, background: "#22c55e" },
-      { level: 6, background: "#16a34a" },
+      { level: 15, background: "#14532d" },
+      { level: 6, background: "#166534" },
       { level: 3, background: "#15803d" },
-      { level: 2, background: "#166534" },
-      { level: 1, background: "#14532d" },
+      { level: 2, background: "#16a34a" },
+      { level: 1, background: "#22c55e" },
     ],
     [maxContribution]
   );
@@ -635,7 +635,6 @@ const ColorView = ({
   const maxDate = new Date();
   const defaultMinDate = startOfWeek(subYears(maxDate, 1)).valueOf();
   const [minDate, setMinDate] = useState(defaultMinDate);
-  const [hoverDate, setHoverDate] = useState<string>();
   const numColumns = differenceInWeeks(maxDate, minDate) + 1;
   const headers = Array(numColumns)
     .fill(null)
@@ -717,10 +716,7 @@ const ColorView = ({
         </select>
       </div>
       <div className="border py-2 rounded-md w-min">
-        <table
-          className="mx-2 pt-1 text-center h-full"
-          onMouseLeave={() => setHoverDate("")}
-        >
+        <table className="mx-2 pt-1 text-center h-full">
           <thead>
             <tr className="text-xs font-normal text-left">
               <th />
@@ -755,13 +751,7 @@ const ColorView = ({
           </tbody>
         </table>
       </div>
-      <div className={"h-6"}>
-        {hoverDate &&
-          `${
-            filteredContributions[hoverDate]?.length || 0
-          } Contributions on ${hoverDate}`}
-      </div>
-      <div className="mt-6">
+      <div className="mt-12">
         <h1 className="text-2xl font-bold mb-8">View Options</h1>
         <h2 className={"text-lg font-semibold mb-3"}> Color Thresholds</h2>
         {defaultThresholds.map((c, i) => (
