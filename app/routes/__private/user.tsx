@@ -55,7 +55,7 @@ const UserPage: React.FunctionComponent = () => {
   const handle = matches.map((m) => m.handle).find((t) => !!t);
   return (
     <div className="flex-grow flex overflow-hidden">
-      <nav className="bg-clarity-50 min-h-full flex flex-col border-r-2 border-r-black border-opacity-10 min-w-min">
+      <nav className="bg-clarity-50 min-h-full hidden lg:flex flex-col border-r-2 border-r-black border-opacity-10 min-w-min">
         <div className="p-3 h-14 flex items-center w-72">
           <div className="flex items-center gap-3 hover:bg-clarity-100 cursor-pointer w-fit">
             <img

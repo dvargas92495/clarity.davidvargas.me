@@ -559,7 +559,6 @@ const Toolbar = () => {
 const NewViewPage = () => {
   const matches = useMatches();
   const leaf = matches[matches.length - 1].pathname;
-  console.log(leaf);
   return (
     <>
       <div className="flex items-center gap-4 mb-4">
