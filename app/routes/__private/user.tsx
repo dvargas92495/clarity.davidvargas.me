@@ -55,38 +55,40 @@ const UserPage: React.FunctionComponent = () => {
   const handle = matches.map((m) => m.handle).find((t) => !!t);
   return (
     <div className="flex-grow flex overflow-hidden">
-      <nav className="bg-clarity-50 min-h-full hidden lg:flex flex-col border-r-2 border-r-black border-opacity-10 min-w-min">
-        <div className="p-3 h-14 flex items-center w-72">
-          <div className="flex items-center gap-3 hover:bg-clarity-100 cursor-pointer w-fit">
-            <img
-              className="h-5 w-5"
-              src="https://tailwindui.com/img/logos/workflow-mark-indigo-500.svg"
-              alt="Workflow"
-            />
-            <img
-              className="h-5 w-5"
-              src="https://tailwindui.com/img/logos/workflow-mark-indigo-500.svg"
-              alt="Workflow"
-            />
-            <img
-              className="h-5 w-5"
-              src="https://tailwindui.com/img/logos/workflow-mark-indigo-500.svg"
-              alt="Workflow"
-            />
+      {null && (
+        <nav className="bg-clarity-50 min-h-full hidden lg:flex flex-col border-r-2 border-r-black border-opacity-10 min-w-min">
+          <div className="p-3 h-14 flex items-center w-72">
+            <div className="flex items-center gap-3 hover:bg-clarity-100 cursor-pointer w-fit">
+              <img
+                className="h-5 w-5"
+                src="https://tailwindui.com/img/logos/workflow-mark-indigo-500.svg"
+                alt="Workflow"
+              />
+              <img
+                className="h-5 w-5"
+                src="https://tailwindui.com/img/logos/workflow-mark-indigo-500.svg"
+                alt="Workflow"
+              />
+              <img
+                className="h-5 w-5"
+                src="https://tailwindui.com/img/logos/workflow-mark-indigo-500.svg"
+                alt="Workflow"
+              />
+            </div>
           </div>
-        </div>
-        <div className="flex-grow">
-          {TABS.map((tab) => (
-            <Tab key={tab.id} id={tab.id} active={currentTab === tab.id} />
-          ))}
-        </div>
-        <div className="h-12 bg-clarity-50 flex items-center px-4 border-t-2 border-t-black border-opacity-10">
-          <UserButton />
-          <div className="ml-4">
-            {user.user?.firstName} {user.user?.lastName}
+          <div className="flex-grow">
+            {TABS.map((tab) => (
+              <Tab key={tab.id} id={tab.id} active={currentTab === tab.id} />
+            ))}
           </div>
-        </div>
-      </nav>
+          <div className="h-12 bg-clarity-50 flex items-center px-4 border-t-2 border-t-black border-opacity-10">
+            <UserButton />
+            <div className="ml-4">
+              {user.user?.firstName} {user.user?.lastName}
+            </div>
+          </div>
+        </nav>
+      )}
       <ToolbarProvider>
         <div className="flex-grow flex flex-col overflow-x-hidden">
           <div className="h-14 flex p-4 border-b-2 border-b-black border-opacity-10 justify-between">
@@ -94,7 +96,7 @@ const UserPage: React.FunctionComponent = () => {
               {handle?.header || currentTab}
             </h1>
             <span className="flex gap-4 items-center">
-              {handle?.Toolbar && <handle.Toolbar />}
+              {/* handle?.Toolbar && <handle.Toolbar /> */}
             </span>
           </div>
           <div className="flex-grow overflow-x-auto">
