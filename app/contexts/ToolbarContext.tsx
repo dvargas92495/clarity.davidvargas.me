@@ -26,7 +26,7 @@ export const ToolbarProvider = ({
   const [data, setData] = useState({});
   return (
     <ToolbarContext.Provider value={{ data, setData }}>
-      {children};
+      {children}
     </ToolbarContext.Provider>
   );
 };
