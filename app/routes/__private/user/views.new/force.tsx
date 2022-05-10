@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/server-runtime";
 import getWorkConnections from "../../../../data/getWorkConnections.server";
@@ -20,7 +26,10 @@ const getImage = (src: string) => {
 
 const ForceView = () => {
   const data = useLoaderData<Awaited<ReturnType<typeof getWorkConnections>>>();
+  const versionRef = useRef(0);
+  const [version, setVersion] = useState(versionRef.current);
   const [loaded, setLoaded] = useState<React.ReactNode>();
+  const [nodesSelected, setNodesSelected] = useState(new Set());
   const nodeById = useMemo(
     () => Object.fromEntries(data.nodes.map(({ id, ...n }) => [id, n])),
     [data.nodes]
@@ -51,8 +60,10 @@ const ForceView = () => {
     Required<Parameters<typeof ForceGraph2D>[0]>["nodeCanvasObject"]
   >(
     (node, canvas) => {
-
       const src = nodeById[node.id || ""]?.avatar || "";
+      if (nodesSelected.has(node.id)) {
+        // draw an outline
+      }
       try {
         canvas.drawImage(
           getImage(src),
@@ -68,13 +79,32 @@ const ForceView = () => {
 
       canvas.restore();
     },
-    [radius]
+    [radius, nodesSelected]
   );
   useEffect(() => {
-    import("react-force-graph").then(({ ForceGraph2D }) =>
+    import("react-force-graph").then(({ ForceGraph2D }) => {
+      const links = (
+        nodesSelected.size === 0
+          ? data.links
+          : data.links.filter(
+              (l) => nodesSelected.has(l.source) || nodesSelected.has(l.target)
+            )
+      ).map((l) => ({ ...l }));
+      const nodesInLinks = new Set(links.flatMap((l) => [l.source, l.target]));
+      const nodes = (
+        nodesSelected.size === 0
+          ? data.nodes
+          : data.nodes.filter((node) => nodesInLinks.has(node.id))
+      ).map((n) => ({ ...n }));
+      const v = versionRef.current + 1;
+      versionRef.current = v;
+      setVersion(v);
       setLoaded(
         <ForceGraph2D
-          graphData={data}
+          graphData={{
+            links,
+            nodes,
+          }}
           height={800}
           width={800}
           nodeRelSize={radius}
@@ -82,10 +112,27 @@ const ForceView = () => {
           nodeCanvasObject={nodeCanvasObject}
           linkWidth={getLinkWidth}
           linkColor={() => "#000000"}
+          onNodeClick={(node) => {
+            if (nodesSelected.has(node.id)) {
+              nodesSelected.delete(node.id);
+            } else {
+              nodesSelected.add(node.id);
+            }
+            setNodesSelected(new Set(nodesSelected));
+          }}
         />
-      )
-    );
-  }, [setLoaded, data, nodeCanvasObject, getLinkWidth]);
+      );
+    });
+  }, [
+    data,
+    getLinkWidth,
+    nodeCanvasObject,
+    nodesSelected,
+    setLoaded,
+    setNodesSelected,
+    setVersion,
+    versionRef,
+  ]);
   return (
     <div>
       <style>{`.force-graph-container {
@@ -94,7 +141,7 @@ const ForceView = () => {
     height: 800px;
     width: 800px;
   }`}</style>
-      <React.Fragment key={`${radius}-${linkWidthMul}`}>
+      <React.Fragment key={`${version}`}>
         {loaded || <div style={{ height: 800 }}>Loading...</div>}
       </React.Fragment>
       <div className="mt-12">
