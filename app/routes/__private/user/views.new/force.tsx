@@ -9,6 +9,7 @@ import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/server-runtime";
 import getWorkConnections from "../../../../data/getWorkConnections.server";
 import type { ForceGraph2D } from "react-force-graph";
+import type { LinkObject } from "react-force-graph-2d";
 import NumberInput from "@dvargas92495/ui/components/NumberInput";
 
 const DEFAULT_NODE_RADIUS = 10;
@@ -23,13 +24,21 @@ const getImage = (src: string) => {
   img.src = s;
   return (ImageCache[s] = img);
 };
-
+const getId = (l: LinkObject, acc: "source" | "target") => {
+  const node = l[acc];
+  return typeof node === "undefined"
+    ? ""
+    : typeof node === "string"
+    ? node
+    : typeof node === "number"
+    ? node.toString()
+    : `${node.id}`;
+};
 const ForceView = () => {
   const data = useLoaderData<Awaited<ReturnType<typeof getWorkConnections>>>();
-  const versionRef = useRef(0);
-  const [version, setVersion] = useState(versionRef.current);
-  const [loaded, setLoaded] = useState<React.ReactNode>();
+  const [ForceGraph, setForceGraph] = useState<typeof ForceGraph2D>();
   const [nodesSelected, setNodesSelected] = useState(new Set());
+  const [nodeHovered, setNodeHovered] = useState("");
   const nodeById = useMemo(
     () => Object.fromEntries(data.nodes.map(({ id, ...n }) => [id, n])),
     [data.nodes]
@@ -60,11 +69,14 @@ const ForceView = () => {
     Required<Parameters<typeof ForceGraph2D>[0]>["nodeCanvasObject"]
   >(
     (node, canvas) => {
-      const src = nodeById[node.id || ""]?.avatar || "";
-      if (nodesSelected.has(node.id)) {
+      const { id = "" } = node;
+      const src = nodeById[id]?.avatar || "";
+      if (nodesSelected.has(id)) {
         // draw an outline
       }
       try {
+        if (nodeHovered && nodeHovered !== id) canvas.globalAlpha = 0.25;
+        else canvas.globalAlpha = 1;
         canvas.drawImage(
           getImage(src),
           (node.x || 0) - radius,
@@ -79,37 +91,65 @@ const ForceView = () => {
 
       canvas.restore();
     },
-    [radius, nodesSelected]
+    [radius, nodesSelected, nodeHovered]
   );
+  /* Not working yet
+  const linkCanvasObject = useCallback<
+    Required<Parameters<typeof ForceGraph2D>[0]>["linkCanvasObject"]
+  >(
+    (link, canvas) => {
+      if (
+        !nodeHovered ||
+        nodeHovered === getId(link, "source") ||
+        nodeHovered === getId(link, "target")
+      )
+        canvas.globalAlpha = 1;
+      else canvas.globalAlpha = 0.25;
+    },
+    [nodeHovered]
+  );
+  */
+  const graphData = useMemo(() => {
+    const links =
+      nodesSelected.size === 0
+        ? data.links
+        : data.links.filter(
+            (l) =>
+              nodesSelected.has(getId(l, "source")) ||
+              nodesSelected.has(getId(l, "target"))
+          );
+    const nodesInLinks = new Set(
+      links.flatMap((l) => [getId(l, "source"), getId(l, "target")])
+    );
+    const nodes =
+      nodesSelected.size === 0
+        ? data.nodes
+        : data.nodes.filter((node) => nodesInLinks.has(node.id));
+    return { nodes, links };
+  }, [nodesSelected, data]);
   useEffect(() => {
     import("react-force-graph").then(({ ForceGraph2D }) => {
-      const links = (
-        nodesSelected.size === 0
-          ? data.links
-          : data.links.filter(
-              (l) => nodesSelected.has(l.source) || nodesSelected.has(l.target)
-            )
-      ).map((l) => ({ ...l }));
-      const nodesInLinks = new Set(links.flatMap((l) => [l.source, l.target]));
-      const nodes = (
-        nodesSelected.size === 0
-          ? data.nodes
-          : data.nodes.filter((node) => nodesInLinks.has(node.id))
-      ).map((n) => ({ ...n }));
-      const v = versionRef.current + 1;
-      versionRef.current = v;
-      setVersion(v);
-      setLoaded(
-        <ForceGraph2D
-          graphData={{
-            links,
-            nodes,
-          }}
+      setForceGraph(ForceGraph2D);
+    });
+  }, [setForceGraph]);
+  return (
+    <div>
+      <style>{`.force-graph-container {
+    border: 1px dashed #88888880;
+    border-radius: 16px;
+    height: 800px;
+    width: 800px;
+  }`}</style>
+      {ForceGraph ? (
+        <ForceGraph
+          graphData={graphData}
           height={800}
           width={800}
           nodeRelSize={radius}
           nodeLabel={(node) => nodeById[node.id || ""]?.name || "Unknown User"}
           nodeCanvasObject={nodeCanvasObject}
+          // linkCanvasObject={linkCanvasObject}
+          // linkCanvasObjectMode={() => "before"}
           linkWidth={getLinkWidth}
           linkColor={() => "#000000"}
           onNodeClick={(node) => {
@@ -120,30 +160,14 @@ const ForceView = () => {
             }
             setNodesSelected(new Set(nodesSelected));
           }}
+          onNodeHover={(node) => {
+            setNodeHovered((node?.id as string) || "");
+          }}
         />
-      );
-    });
-  }, [
-    data,
-    getLinkWidth,
-    nodeCanvasObject,
-    nodesSelected,
-    setLoaded,
-    setNodesSelected,
-    setVersion,
-    versionRef,
-  ]);
-  return (
-    <div>
-      <style>{`.force-graph-container {
-    border: 1px dashed #88888880;
-    border-radius: 16px;
-    height: 800px;
-    width: 800px;
-  }`}</style>
-      <React.Fragment key={`${version}`}>
-        {loaded || <div style={{ height: 800 }}>Loading...</div>}
-      </React.Fragment>
+      ) : (
+        <div style={{ height: 800 }}>Loading...</div>
+      )}
+      {/* </React.Fragment> */}
       <div className="mt-12">
         <h1 className="text-2xl font-bold mb-8">Settings</h1>
         <div className="flex gap-16 items-start justify-start">

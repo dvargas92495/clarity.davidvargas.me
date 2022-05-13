@@ -16,7 +16,7 @@ const getWorkConnections = () => {
           reviewer_id: string | null;
           contributor_id: string | null;
         }[],
-        nodes: nodes as { id: string; name: string, avatar: string }[],
+        nodes: nodes as { id: string; name: string; avatar: string }[],
       }))
       .then((a) => {
         return {
@@ -31,7 +31,9 @@ const getWorkConnections = () => {
                     [link.author_id, link.reviewer_id],
                     [link.author_id, link.contributor_id],
                     [link.reviewer_id, link.contributor_id],
-                  ].filter((pair) => pair.every((node) => !!node));
+                  ]
+                    .filter((pair) => pair.every((node) => !!node))
+                    .filter(([source, target]) => source !== target);
                   return pairs.map((nodes) => ({
                     nodes: nodes.sort(),
                     id: link.id,
