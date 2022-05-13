@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/server-runtime";
 import getWorkConnections from "../../../../data/getWorkConnections.server";
@@ -12,7 +6,7 @@ import type { ForceGraph2D } from "react-force-graph";
 import type { LinkObject } from "react-force-graph-2d";
 import NumberInput from "@dvargas92495/ui/components/NumberInput";
 
-const DEFAULT_NODE_RADIUS = 10;
+const DEFAULT_NODE_RADIUS = 6;
 const DEFAULT_LINK_WIDTH_MULTIPLIER = 0.2;
 
 const ImageCache: Record<string, HTMLImageElement> = {};
@@ -61,8 +55,9 @@ const ForceView = () => {
     DEFAULT_LINK_WIDTH_MULTIPLIER
   );
   const getLinkWidth = useCallback(
-    (edge) =>
-      edgesByIds[`${edge.source.id}|${edge.target.id}`]?.length * linkWidthMul,
+    (edge: LinkObject) =>
+      edgesByIds[`${getId(edge, "source")}|${getId(edge, "target")}`]?.length *
+      linkWidthMul,
     [edgesByIds, linkWidthMul]
   );
   const nodeCanvasObject = useCallback<
@@ -84,6 +79,7 @@ const ForceView = () => {
           radius * 2,
           radius * 2
         );
+        canvas.globalAlpha = 1;
       } catch (e) {
         console.error("Failed to draw", node.id, "with source", src);
         console.error(e);
@@ -93,22 +89,20 @@ const ForceView = () => {
     },
     [radius, nodesSelected, nodeHovered]
   );
-  /* Not working yet
-  const linkCanvasObject = useCallback<
-    Required<Parameters<typeof ForceGraph2D>[0]>["linkCanvasObject"]
-  >(
-    (link, canvas) => {
+  const linkColor = useCallback(
+    (link: LinkObject) => {
       if (
         !nodeHovered ||
         nodeHovered === getId(link, "source") ||
         nodeHovered === getId(link, "target")
-      )
-        canvas.globalAlpha = 1;
-      else canvas.globalAlpha = 0.25;
+      ) {
+        return "#000000";
+      } else {
+        return "#00000010";
+      }
     },
     [nodeHovered]
   );
-  */
   const graphData = useMemo(() => {
     const links =
       nodesSelected.size === 0
@@ -148,10 +142,8 @@ const ForceView = () => {
           nodeRelSize={radius}
           nodeLabel={(node) => nodeById[node.id || ""]?.name || "Unknown User"}
           nodeCanvasObject={nodeCanvasObject}
-          // linkCanvasObject={linkCanvasObject}
-          // linkCanvasObjectMode={() => "before"}
           linkWidth={getLinkWidth}
-          linkColor={() => "#000000"}
+          linkColor={linkColor}
           onNodeClick={(node) => {
             if (nodesSelected.has(node.id)) {
               nodesSelected.delete(node.id);
