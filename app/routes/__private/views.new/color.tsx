@@ -11,9 +11,9 @@ import addDays from "date-fns/addDays";
 import subYears from "date-fns/subYears";
 import subMonths from "date-fns/subMonths";
 import isAfter from "date-fns/isAfter";
-import getWorkData from "../../../../data/getWorkData.server";
+import getWorkData from "../../../data/getWorkData.server";
 import startOfWeek from "date-fns/startOfWeek";
-import WORK_TYPES from "../../../../enums/workTypes";
+import WORK_TYPES from "../../../enums/workTypes";
 import BaseInput from "@dvargas92495/ui/components/BaseInput";
 
 const VALID_WORK_TYPES = WORK_TYPES.map((w) => w.name);

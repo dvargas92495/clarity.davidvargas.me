@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/server-runtime";
-import getWorkConnections from "../../../../data/getWorkConnections.server";
+import getWorkConnections from "../../../data/getWorkConnections.server";
 import type { ForceGraph2D } from "react-force-graph";
 import type { LinkObject } from "react-force-graph-2d";
 import NumberInput from "@dvargas92495/ui/components/NumberInput";

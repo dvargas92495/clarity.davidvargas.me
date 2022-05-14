@@ -5,7 +5,8 @@ import Dialog from "@dvargas92495/ui/components/Dialog";
 import dateFormat from "date-fns/format";
 import subMonths from "date-fns/subMonths";
 import { v4 } from "uuid";
-import { useToolbar } from "../../../contexts/ToolbarContext";
+import { useToolbar } from "../../contexts/ToolbarContext";
+import getMeta from "@dvargas92495/ui/utils/getMeta";
 
 const VIEW_TYPES = [
   {
@@ -38,6 +39,10 @@ const VIEW_TYPES = [
       </svg>
     ),
   },
+];
+
+// @ts-ignore
+const _ = [
   {
     id: "Kanban",
     Icon: (
@@ -529,7 +534,7 @@ const Toolbar = () => {
             <div className="flex items-center gap-2">
               {VIEW_TYPES.map((v) => (
                 <Link
-                  to={`/user/views/new?type=${v.id.toLowerCase()}`}
+                  to={`/views/new?type=${v.id.toLowerCase()}`}
                   key={v.id}
                 >
                   <button className={"hover:bg-clarity-200 rounded-md p-2"}>
@@ -564,7 +569,7 @@ const NewViewPage = () => {
       <div className="flex items-center gap-4 mb-4">
         {VIEW_TYPES.map((c) => (
           <Link
-            to={`/user/views/new/${c.id.toLowerCase()}`}
+            to={`/views/new/${c.id.toLowerCase()}`}
             key={c.id}
             className={`capitalize rounded-md text-green-700 border-green-700 border px-6 py-3 text-lg font-semibold cursor-pointer hover:bg-green-50 ${
               leaf.endsWith(c.id.toLowerCase()) ? "bg-green-100" : "bg-transparent"
@@ -583,5 +588,9 @@ export const handle = {
   Toolbar,
   header: "New",
 };
+
+export const meta = getMeta({
+  title: "New View",
+});
 
 export default NewViewPage;

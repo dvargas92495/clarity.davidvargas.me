@@ -4,8 +4,13 @@ import { Link } from "@remix-run/react";
 const Home: React.FC = () => (
   <div className="flex flex-col h-full">
     <div className="bg-clarity-50 flex flex-col pt-60 items-center w-full flex-grow">
-      <Link to={"/user"} className={"absolute top-2 right-2"}>
-        Sign in with ethereum
+      <Link
+        to={"/views"}
+        className={
+          "absolute top-6 right-6 bg-clarity-300 px-4 py-2 cursor-pointer rounded-lg shadow-sm hover:shadow-md active:shadow-none"
+        }
+      >
+        Check out some views!
       </Link>
       <h1 className="text-2xl font-extrabold">
         The simplest workspace for decentralized teams
