@@ -26,11 +26,11 @@ const ColorView = () => {
   );
   const defaultThresholds = useMemo(
     () => [
-      { level: 15, background: "#0B2D19" },
-      { level: 6, background: "#1D8444" },
-      { level: 3, background: "#1EB857" },
-      { level: 2, background: "#56C67F" },
-      { level: 1, background: "#95E2B2" },
+      { level: 15, background: "#155b1e" },
+      { level: 6, background: "#329a34" },
+      { level: 3, background: "#61c14e" },
+      { level: 2, background: "#a0d27f" },
+      { level: 1, background: "#b9e1a8" },
     ],
     [maxContribution]
   );
