@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Transition } from "@headlessui/react";
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/server-runtime";
-import NumberInput from "@dvargas92495/ui/components/NumberInput";
+import NumberInput from "@dvargas92495/app/components/NumberInput";
 import dateFormat from "date-fns/format";
 import dateParse from "date-fns/parse";
 import addWeeks from "date-fns/addWeeks";
@@ -14,12 +14,13 @@ import isAfter from "date-fns/isAfter";
 import getWorkData from "../../../data/getWorkData.server";
 import startOfWeek from "date-fns/startOfWeek";
 import WORK_TYPES from "../../../enums/workTypes";
-import BaseInput from "@dvargas92495/ui/components/BaseInput";
+import BaseInput from "@dvargas92495/app/components/BaseInput";
 
 const VALID_WORK_TYPES = WORK_TYPES.map((w) => w.name);
 
 const ColorView = () => {
-  const contributions = useLoaderData<Awaited<ReturnType<typeof getContributionsData>>>();
+  const contributions =
+    useLoaderData<Awaited<ReturnType<typeof getContributionsData>>>();
   const maxContribution = Object.values(contributions).reduce(
     (p, c) => (c.length > p ? c.length : p),
     0
@@ -226,7 +227,7 @@ const ColorView = () => {
                 name={"workType"}
                 value={c}
                 inputClassname={"w-6 h-6 mb-2"}
-                className={'flex flex-row-reverse gap-2 justify-end'}
+                className={"flex flex-row-reverse gap-2 justify-end"}
               />
             ))}
           </div>

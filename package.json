@@ -18,8 +18,7 @@
     "tailwind": "npm run generate:css -- --watch"
   },
   "dependencies": {
-    "@dvargas92495/api": "^0.8.2",
-    "@dvargas92495/ui": "^0.54.2",
+    "@dvargas92495/app": "^0.3.2",
     "react-force-graph": "^1.41.12",
     "react-force-graph-2d": "^1.23.10"
   },

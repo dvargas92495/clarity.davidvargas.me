@@ -1,7 +1,7 @@
 import React from "react";
 // import type { LoaderFunction } from "@remix-run/server-runtime";
-// import Table from "@dvargas92495/ui/components/Table";
-import getMeta from "@dvargas92495/ui/utils/getMeta";
+// import Table from "@dvargas92495/app/components/Table";
+import getMeta from "@dvargas92495/app/utils/getMeta";
 import { Link } from "@remix-run/react";
 
 const ViewsPage = () => {
@@ -19,11 +19,14 @@ const ViewsPage = () => {
     // />
     <>
       <p>
-        Loading existing views coming soon. Click the button below to create one:
+        Loading existing views coming soon. Click the button below to create
+        one:
       </p>
       <Link
         to={"/views/new/color"}
-        className={"bg-sky-400 rounded-lg hover:bg-sky-600 active:bg-sky-800 px-4 py-2 mt-8 cursor-pointer inline-block"}
+        className={
+          "bg-sky-400 rounded-lg hover:bg-sky-600 active:bg-sky-800 px-4 py-2 mt-8 cursor-pointer inline-block"
+        }
       >
         + New
       </Link>

@@ -1,2 +1,2 @@
-import EntryClient from "@dvargas92495/ui/components/EntryClient";
+import EntryClient from "@dvargas92495/app/components/EntryClient";
 EntryClient();

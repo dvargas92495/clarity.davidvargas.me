@@ -1,4 +1,4 @@
-import getMysqlConnection from "@dvargas92495/api/mysql";
+import getMysqlConnection from "@dvargas92495/app/backend/mysql.server";
 
 const getWorkConnections = () => {
   return getMysqlConnection().then((cxn) =>

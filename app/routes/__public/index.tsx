@@ -12,6 +12,14 @@ const Home: React.FC = () => (
       >
         Check out some views!
       </Link>
+      <Link
+        to={"/data"}
+        className={
+          "absolute bottom-6 right-6 bg-clarity-300 px-4 py-2 cursor-pointer rounded-lg shadow-sm hover:shadow-md active:shadow-none"
+        }
+      >
+        Upload Data
+      </Link>
       <h1 className="text-2xl font-extrabold">
         The simplest workspace for decentralized teams
       </h1>

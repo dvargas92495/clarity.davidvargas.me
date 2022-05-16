@@ -1,4 +1,4 @@
-import getMysqlConnection from "@dvargas92495/api/mysql";
+import getMysqlConnection from "@dvargas92495/app/backend/mysql.server";
 import axios from "axios";
 import type { MigrationProps } from "fuegojs/dist/migrate";
 import { idByWork } from "~/enums/workTypes";

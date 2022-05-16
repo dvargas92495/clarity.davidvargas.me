@@ -4,7 +4,7 @@ import type { LoaderFunction } from "@remix-run/server-runtime";
 import getWorkConnections from "../../../data/getWorkConnections.server";
 import type { ForceGraph2D } from "react-force-graph";
 import type { LinkObject } from "react-force-graph-2d";
-import NumberInput from "@dvargas92495/ui/components/NumberInput";
+import NumberInput from "@dvargas92495/app/components/NumberInput";
 
 const DEFAULT_NODE_RADIUS = 6;
 const DEFAULT_LINK_WIDTH_MULTIPLIER = 0.2;

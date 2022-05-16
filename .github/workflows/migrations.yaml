@@ -30,4 +30,4 @@ jobs:
       - name: install
         run: npm install
       - name: migrate
-        run: npx fuego migrate
+        run: npx fuego migrate --overwrite 2022-04-27-12-19-init-cabin-data

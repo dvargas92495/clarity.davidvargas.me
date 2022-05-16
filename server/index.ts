@@ -1,4 +1,4 @@
-import getRemixHandler from "@dvargas92495/api/getRemixHandler";
+import getRemixHandler from "@dvargas92495/app/backend/getRemixHandler";
 export const handler = getRemixHandler({
   originPaths: [/^\/data\/.*/],
 });

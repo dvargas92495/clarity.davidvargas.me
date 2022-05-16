@@ -1,12 +1,12 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { Menu, Popover, Transition } from "@headlessui/react";
 import { Link, Outlet, useMatches } from "@remix-run/react";
-import Dialog from "@dvargas92495/ui/components/Dialog";
+import Dialog from "@dvargas92495/app/components/Dialog";
 import dateFormat from "date-fns/format";
 import subMonths from "date-fns/subMonths";
 import { v4 } from "uuid";
 import { useToolbar } from "../../contexts/ToolbarContext";
-import getMeta from "@dvargas92495/ui/utils/getMeta";
+import getMeta from "@dvargas92495/app/utils/getMeta";
 
 const VIEW_TYPES = [
   {
@@ -533,10 +533,7 @@ const Toolbar = () => {
             <p className="text-sm font-medium text-gray-900">View as:</p>
             <div className="flex items-center gap-2">
               {VIEW_TYPES.map((v) => (
-                <Link
-                  to={`/views/new?type=${v.id.toLowerCase()}`}
-                  key={v.id}
-                >
+                <Link to={`/views/new?type=${v.id.toLowerCase()}`} key={v.id}>
                   <button className={"hover:bg-clarity-200 rounded-md p-2"}>
                     {v.Icon}
                   </button>
@@ -572,7 +569,9 @@ const NewViewPage = () => {
             to={`/views/new/${c.id.toLowerCase()}`}
             key={c.id}
             className={`capitalize rounded-md text-green-700 border-green-700 border px-6 py-3 text-lg font-semibold cursor-pointer hover:bg-green-50 ${
-              leaf.endsWith(c.id.toLowerCase()) ? "bg-green-100" : "bg-transparent"
+              leaf.endsWith(c.id.toLowerCase())
+                ? "bg-green-100"
+                : "bg-transparent"
             }`}
           >
             {c.id}
