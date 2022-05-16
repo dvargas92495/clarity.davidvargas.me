@@ -6,7 +6,7 @@ const s3 = new AWS.S3({ region: process.env.AWS_REGION });
 const uploadJson: UploadHandler = ({ filename, stream }) => {
   const Key = `data/${filename}`;
   return s3
-    .upload({
+    .putObject({
       Bucket: "clarity.davidvargas.me",
       Key,
       Body: stream,

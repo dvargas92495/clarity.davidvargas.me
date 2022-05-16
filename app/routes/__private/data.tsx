@@ -9,6 +9,8 @@ import {
 } from "@remix-run/node";
 import uploadJson from "~/data/uploadJson.server";
 import bulkInsertData from "~/data/bulkInsertData.server";
+export { default as CatchBoundary } from "@dvargas92495/app/components/DefaultCatchBoundary";
+export { default as ErrorBoundary } from "@dvargas92495/app/components/DefaultErrorBoundary";
 
 const DataPage = () => {
   return (
@@ -39,7 +41,6 @@ export const action: ActionFunction = async ({ request }) => {
   const formData = await unstable_parseMultipartFormData(request, uploadJson);
   const users = formData.get("users") as string;
   const projects = formData.get("projects") as string;
-  console.log(users, projects);
   return bulkInsertData({ users, projects }).then(() => ({ success: true }));
 };
 
