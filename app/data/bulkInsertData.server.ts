@@ -3,7 +3,7 @@ import AWS from "aws-sdk";
 import type mysql from "mysql2";
 import { idByWork } from "~/enums/workTypes";
 
-const s3 = new AWS.S3();
+const s3 = new AWS.S3({ region: process.env.AWS_REGION });
 
 const bulkInsertData = ({
   users,
@@ -16,27 +16,33 @@ const bulkInsertData = ({
     s3
       .getObject({ Bucket: "clarity.davidvargas.me", Key: projects })
       .promise()
-      .then((r) => JSON.parse(r.Body?.toString() || "[]") as {
-        id: string;
-        projectId: number;
-        name: string;
-        dateCreated: string;
-        dateClosed: string;
-        assigneeId: string;
-        workType: "Task" | "Project";
-        authorId: string;
-        reviewerId: string;
-        contributorIds: string;
-      }[]),
+      .then(
+        (r) =>
+          JSON.parse(r.Body?.toString() || "[]") as {
+            id: string;
+            projectId: number;
+            name: string;
+            dateCreated: string;
+            dateClosed: string;
+            assigneeId: string;
+            workType: "Task" | "Project";
+            authorId: string;
+            reviewerId: string;
+            contributorIds: string;
+          }[]
+      ),
     s3
       .getObject({ Bucket: "clarity.davidvargas.me", Key: users })
       .promise()
-      .then((r) => JSON.parse(r.Body?.toString() || "[]") as {
-        id: string;
-        username: string;
-        avatar: string;
-        name: string;
-      }[]),
+      .then(
+        (r) =>
+          JSON.parse(r.Body?.toString() || "[]") as {
+            id: string;
+            username: string;
+            avatar: string;
+            name: string;
+          }[]
+      ),
   ]).then(([p, us]) => {
     const work = p.map((u) => ({
       ...u,
