@@ -11,10 +11,6 @@ terraform {
       source = "integrations/github"
       version = "4.2.0"
     }
-    aws = {
-      source = "hashicorp/aws"
-      version = "3.74.2"
-    }
   }
 }
 
@@ -67,7 +63,7 @@ provider "github" {
 
 module "aws_static_site" {
   source  = "dvargas92495/static-site/aws"
-  version = "3.6.2"
+  version = "3.6.4"
 
   origin_memory_size = 5120
   origin_timeout = 20
@@ -81,7 +77,7 @@ module "aws_static_site" {
 
 module "aws-serverless-backend" {
     source  = "dvargas92495/serverless-backend/aws"
-    version = "2.5.0"
+    version = "2.5.2"
 
     api_name  = "clarity-davidvargas-me"
     domain    = "clarity.davidvargas.me"
