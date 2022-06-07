@@ -1,49 +1,132 @@
 import href from "react-svg-radar-chart/build/css/index.css";
 import type { LoaderFunction } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useSearchParams } from "@remix-run/react";
 import getWorkData from "~/data/getWorkData.server";
 export { default as CatchBoundary } from "@dvargas92495/app/components/DefaultCatchBoundary";
 export { default as ErrorBoundary } from "@dvargas92495/app/components/DefaultErrorBoundary";
+import Select from "@dvargas92495/app/components/Select";
 import RadarChart from "react-svg-radar-chart";
 import { useMemo } from "react";
 
+const DIMENSIONS = [
+  { id: 0, label: "Work Type" },
+  { id: 1, label: "Author" },
+  { id: 2, label: "Tag" },
+];
+
 const RadarView = () => {
   const data = useLoaderData<Work>();
-  const groupedByType = useMemo(
-    () =>
-      data.reduce((p, c) => {
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const dimension = Number(searchParams.get("dimension") || 0);
+  const { captions, radarData } = useMemo(() => {
+    if (dimension === 0) {
+      const groupedByType = data.reduce((p, c) => {
         if (p[c.type]) {
-          p[c.type].push(c);
+          p[c.type].add(c.id);
         } else {
-          p[c.type] = [c];
+          p[c.type] = new Set([c.id]);
         }
         return p;
-      }, {} as Record<Work[number]["type"], Work[number][]>),
-    [data]
-  );
-  const maxWork = Object.values(groupedByType).reduce(
-    (p, c) => (c.length > p ? c.length : p),
-    0
-  );
+      }, {} as Record<Work[number]["type"], Set<string>>);
+      const maxWork = Object.values(groupedByType).reduce(
+        (p, c) => (c.size > p ? c.size : p),
+        0
+      );
+      return {
+        captions: Object.fromEntries(
+          Object.keys(groupedByType).map((k) => [k, k])
+        ),
+        radarData: Object.fromEntries(
+          Object.keys(groupedByType).map((k) => [
+            k,
+            groupedByType[k].size / maxWork,
+          ])
+        ),
+      };
+    } else if (dimension === 1) {
+      const nameByUser = Object.fromEntries(
+        data.map((d) => [d.authorId, d.user])
+      );
+      const groupedByAuthor = data.reduce((p, c) => {
+        if (p[c.authorId]) {
+          p[c.authorId].add(c.id);
+        } else {
+          p[c.authorId] = new Set([c.id]);
+        }
+        return p;
+      }, {} as Record<Work[number]["type"], Set<string>>);
+      const maxWork = Object.values(groupedByAuthor).reduce(
+        (p, c) => (c.size > p ? c.size : p),
+        0
+      );
+      return {
+        captions: Object.fromEntries(
+          Object.keys(groupedByAuthor).map((k) => [
+            k,
+            nameByUser[k] || "Unknown User",
+          ])
+        ),
+        radarData: Object.fromEntries(
+          Object.keys(groupedByAuthor).map((k) => [
+            k,
+            groupedByAuthor[k].size / maxWork,
+          ])
+        ),
+      };
+    } else if (dimension === 2) {
+      const groupedByTag = data.reduce((p, c) => {
+        if (p[c.tag]) {
+          p[c.tag].add(c.id);
+        } else {
+          p[c.tag] = new Set([c.id]);
+        }
+        return p;
+      }, {} as Record<Work[number]["type"], Set<string>>);
+      const maxWork = Object.values(groupedByTag).reduce(
+        (p, c) => (c.size > p ? c.size : p),
+        0
+      );
+      return {
+        captions: Object.fromEntries(
+          Object.keys(groupedByTag).map((k) => [k, k])
+        ),
+        radarData: Object.fromEntries(
+          Object.keys(groupedByTag).map((k) => [
+            k,
+            groupedByTag[k].size / maxWork,
+          ])
+        ),
+      };
+    } else {
+      return {
+        captions: {},
+        radarData: {},
+      };
+    }
+  }, [dimension]);
   return (
     <div className="relative w-min">
       <RadarChart
-        captions={Object.fromEntries(
-          Object.keys(groupedByType).map((k) => [k, k])
-        )}
+        captions={captions}
         data={[
           {
-            data: Object.fromEntries(
-              Object.keys(groupedByType).map((k) => [
-                k,
-                groupedByType[k].length / maxWork,
-              ])
-            ),
+            data: radarData,
             meta: { color: "blue" },
           },
         ]}
         size={450}
       />
+      <div className={"flex flex-col"}>
+        <Select
+          options={DIMENSIONS}
+          label={"Dimension"}
+          onChange={(dimension) =>
+            setSearchParams({ dimension: `${dimension}` })
+          }
+          defaultValue={dimension}
+        />
+      </div>
     </div>
   );
 };

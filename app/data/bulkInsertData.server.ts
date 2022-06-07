@@ -36,7 +36,7 @@ const bulkInsertData = ({
             | Project[]
             | {
                 completedProjects: Project[];
-                tagDict: Record<string, { id: string; name: string }>;
+                tagsDict: Record<string, { id: string; name: string }>;
               };
         } catch (e) {
           console.error(r.Body?.toString());
@@ -67,7 +67,7 @@ const bulkInsertData = ({
           ? (JSON.parse(u.contributorIds) as string[])
           : u.contributorIds,
     }));
-    const tags = Array.isArray(p) ? null : p.tagDict;
+    const tags = Array.isArray(p) ? null : p.tagsDict;
     const userIds = new Set(us.map((u) => u.id));
     const deletedUsers = Array.from(
       new Set(
@@ -167,7 +167,7 @@ const bulkInsertData = ({
                   .execute(
                     `INSERT INTO tags (id, name) VALUES ${Object.keys(tags)
                       .map(() => `(?, ?)`)
-                      .join(",")}`,
+                      .join(",")} ON DUPLICATE KEY UPDATE name=name`,
                     Object.values(tags)
                       .map((t) => [t.id, t.name])
                       .flat()
@@ -176,8 +176,15 @@ const bulkInsertData = ({
                     return connection.execute(
                       `INSERT INTO tag_work (uuid, tag, work) VALUES ${work
                         .flatMap((w) => w.tags.map(() => `(UUID(), ?, ?)`))
-                        .join(",")}`,
-                      work.flatMap((w) => w.tags.map((t) => [t, w.id])).flat()
+                        .join(",")} ON DUPLICATE KEY UPDATE work=work`,
+                      work
+                        .flatMap((w) =>
+                          w.tags.map((t) => [
+                            t.replace(/^Document/, "").replace(/^Work/, ""),
+                            w.id,
+                          ])
+                        )
+                        .flat()
                     );
                   })
                   .then(() => Promise.resolve())
