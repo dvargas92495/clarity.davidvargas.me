@@ -9,7 +9,7 @@ export const migrate = (args: MigrationProps) => {
     tag       VARCHAR(36)  NOT NULL,
     work      VARCHAR(191) NOT NULL,
 
-    PRIMARY KEY (uuid)
+    PRIMARY KEY (uuid),
     FOREIGN KEY (tag) REFERENCES tags(id),
     FOREIGN KEY (work) REFERENCES work(id)
 )`

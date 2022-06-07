@@ -4,7 +4,7 @@ on:
   push:
     branches: main
     paths:
-      - "migrations/**"
+      - "data/**"
       - ".github/workflows/migrations.yaml"
 
 env:
@@ -27,5 +27,7 @@ jobs:
           node-version: 16.14.0
       - name: install
         run: npm install
+      - name: rever
+        run: npx fuego migrate --revert
       - name: migrate
-        run: npx fuego migrate --overwrite 2022-04-27-12-19-init-cabin-data
+        run: npx fuego migrate
