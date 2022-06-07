@@ -3,7 +3,9 @@ import type { UploadHandler } from "@remix-run/node";
 
 const s3 = new AWS.S3({ region: process.env.AWS_REGION });
 
-const uploadJson: UploadHandler = ({ filename, data }) => {
+const uploadJson: UploadHandler = ({ filename, data, ...rest }) => {
+  console.log("rest", rest);
+  console.log("data", data);
   const Key = `data/${filename}`;
   return s3
     .upload({
