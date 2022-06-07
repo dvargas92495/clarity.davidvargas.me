@@ -5,6 +5,20 @@ import { idByWork } from "~/enums/workTypes";
 
 const s3 = new AWS.S3({ region: process.env.AWS_REGION });
 
+type Project = {
+  id: string;
+  projectId: number;
+  name: string;
+  dateCreated: string;
+  dateClosed: string;
+  assigneeId: string;
+  workType: "Task" | "Project";
+  authorId: string;
+  reviewerId: string;
+  contributorIds: string;
+  tags: string[];
+};
+
 const bulkInsertData = ({
   users,
   projects,
@@ -18,18 +32,12 @@ const bulkInsertData = ({
       .promise()
       .then(
         (r) =>
-          JSON.parse(r.Body?.toString() || "[]") as {
-            id: string;
-            projectId: number;
-            name: string;
-            dateCreated: string;
-            dateClosed: string;
-            assigneeId: string;
-            workType: "Task" | "Project";
-            authorId: string;
-            reviewerId: string;
-            contributorIds: string;
-          }[]
+          JSON.parse(r.Body?.toString() || "[]") as
+            | Project[]
+            | {
+                completedProjects: Project[];
+                tagDict: Record<string, { id: string; name: string }>;
+              }
       ),
     s3
       .getObject({ Bucket: "clarity.davidvargas.me", Key: users })
@@ -44,10 +52,11 @@ const bulkInsertData = ({
           }[]
       ),
   ]).then(([p, us]) => {
-    const work = p.map((u) => ({
+    const work = (Array.isArray(p) ? p : p.completedProjects).map((u) => ({
       ...u,
       contributorIds: JSON.parse(u.contributorIds) as string[],
     }));
+    const tags = Array.isArray(p) ? null : p.tagDict;
     const userIds = new Set(us.map((u) => u.id));
     const deletedUsers = Array.from(
       new Set(
@@ -133,7 +142,7 @@ const bulkInsertData = ({
               .then((r) =>
                 console.log(
                   "Updated",
-                  (r as mysql.ResultSetHeader).affectedRows,
+                  (r as mysql.ResultSetHeader).changedRows,
                   "contributors",
                   "Added",
                   (r as mysql.ResultSetHeader).affectedRows,
@@ -141,6 +150,30 @@ const bulkInsertData = ({
                 )
               )
           )
+          .then(() =>
+            tags
+              ? connection
+                  .execute(
+                    `INSERT INTO tags (id, name) VALUES ${Object.keys(tags)
+                      .map(() => `(?, ?)`)
+                      .join(",")}`,
+                    Object.values(tags)
+                      .map((t) => [t.id, t.name])
+                      .flat()
+                  )
+                  .then(() => {
+                    return connection.execute(
+                      `INSERT INTO tag_work (uuid, tag, work) VALUES ${work
+                        .flatMap((w) => w.tags.map(() => `(UUID(), ?, ?)`))
+                        .join(",")}`,
+                      work.flatMap((w) => w.tags.map((t) => [t, w.id])).flat()
+                    );
+                  }).then(() => Promise.resolve())
+              : Promise.resolve()
+          )
+          .then(() => {
+            connection.destroy();
+          })
       )
       .catch((e) => {
         console.error("Migration failed:");
