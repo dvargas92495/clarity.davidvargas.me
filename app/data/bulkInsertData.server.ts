@@ -15,7 +15,7 @@ type Project = {
   workType: "Task" | "Project";
   authorId: string;
   reviewerId: string;
-  contributorIds: string;
+  contributorIds: string | string[];
   tags: string[];
 };
 
@@ -62,7 +62,10 @@ const bulkInsertData = ({
   ]).then(([p, us]) => {
     const work = (Array.isArray(p) ? p : p.completedProjects).map((u) => ({
       ...u,
-      contributorIds: JSON.parse(u.contributorIds) as string[],
+      contributorIds:
+        typeof u.contributorIds === "string"
+          ? (JSON.parse(u.contributorIds) as string[])
+          : u.contributorIds,
     }));
     const tags = Array.isArray(p) ? null : p.tagDict;
     const userIds = new Set(us.map((u) => u.id));
