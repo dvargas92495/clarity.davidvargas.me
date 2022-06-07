@@ -30,27 +30,35 @@ const bulkInsertData = ({
     s3
       .getObject({ Bucket: "clarity.davidvargas.me", Key: projects })
       .promise()
-      .then(
-        (r) =>
-          JSON.parse(r.Body?.toString() || "[]") as
+      .then((r) => {
+        try {
+          return JSON.parse(r.Body?.toString() || "[]") as
             | Project[]
             | {
                 completedProjects: Project[];
                 tagDict: Record<string, { id: string; name: string }>;
-              }
-      ),
+              };
+        } catch (e) {
+          console.error(r.Body?.toString());
+          return Promise.reject(e);
+        }
+      }),
     s3
       .getObject({ Bucket: "clarity.davidvargas.me", Key: users })
       .promise()
-      .then(
-        (r) =>
-          JSON.parse(r.Body?.toString() || "[]") as {
+      .then((r) => {
+        try {
+          return JSON.parse(r.Body?.toString() || "[]") as {
             id: string;
             username: string;
             avatar: string;
             name: string;
-          }[]
-      ),
+          }[];
+        } catch (e) {
+          console.error(r.Body?.toString());
+          return Promise.reject(e);
+        }
+      }),
   ]).then(([p, us]) => {
     const work = (Array.isArray(p) ? p : p.completedProjects).map((u) => ({
       ...u,
@@ -168,7 +176,8 @@ const bulkInsertData = ({
                         .join(",")}`,
                       work.flatMap((w) => w.tags.map((t) => [t, w.id])).flat()
                     );
-                  }).then(() => Promise.resolve())
+                  })
+                  .then(() => Promise.resolve())
               : Promise.resolve()
           )
           .then(() => {
