@@ -18,13 +18,12 @@
     "tailwind": "npm run generate:css -- --watch"
   },
   "dependencies": {
-    "@dvargas92495/app": "^0.6.4",
+    "@dvargas92495/app": "^0.7.2",
     "react-force-graph": "^1.41.12",
     "react-force-graph-2d": "^1.23.10",
     "react-svg-radar-chart": "^1.4.0"
   },
   "devDependencies": {
-    "@tailwindcss/forms": "0.5.0",
     "@types/aws-lambda": "8.10.84",
     "@types/node": "16.11.0",
     "@types/react": "17.0.30",
@@ -37,10 +36,8 @@
     "eslint": "8.0.1",
     "fuegojs": "^0.29.3",
     "prettier": "2.4.1",
-    "tailwindcss": "3.0.24",
     "ts-node": "10.3.0",
     "tslint-config-prettier": "1.18.0",
-    "tslint-react-hooks": "2.2.2",
-    "typescript": "4.5.2"
+    "tslint-react-hooks": "2.2.2"
   }
 }
