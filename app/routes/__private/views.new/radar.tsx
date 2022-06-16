@@ -38,22 +38,16 @@ const RadarView = () => {
 
   return (
     <div className="relative flex gap-32 w-full mt-4">
-      {Object.keys(radarData).length ? (
-        <RadarChart
-          captions={captions}
-          data={[
-            {
-              data: radarData,
-              meta: { color: "blue" },
-            },
-          ]}
-          size={448}
-        />
-      ) : (
-        <div className={"flex-grow max-w-md"}>
-          No data available match these filters
-        </div>
-      )}
+      <RadarChart
+        captions={captions}
+        data={[
+          {
+            data: radarData,
+            meta: { color: "blue" },
+          },
+        ]}
+        size={448}
+      />
       <Form
         method="get"
         className={"flex gap-4"}
@@ -169,20 +163,20 @@ export const loader: LoaderFunction = async ({ request }) => {
         }, {} as Record<Work[number]["type"], Set<string>>);
         const maxWork = Object.values(groupedByType).reduce(
           (p, c) => (c.size > p ? c.size : p),
-          0
+          1
         );
-        const keys = DIMENSIONS.map(d => d.id).filter((d) => !dimensionsHidden.includes(d))
+        const keys = DIMENSIONS.map((d) => d.id).filter(
+          (d) => !dimensionsHidden.includes(d)
+        );
         return {
           captions: Object.fromEntries(
             keys.map((k) => [nameById[k], nameById[k]])
           ),
           radarData: Object.fromEntries(
-            keys.map(
-              (k) => [
-                nameById[k],
-                (groupedByType[k]?.size || 0) / maxWork,
-              ]
-            )
+            keys.map((k) => [
+              nameById[k],
+              (groupedByType[k]?.size || 0) / maxWork,
+            ])
           ),
         };
       };
