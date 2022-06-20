@@ -8,7 +8,7 @@ const getWorkData = () => {
         `SELECT 
           w.id, 
           w.date_closed, 
-          w.work_type, 
+          w.work_type
         FROM work w`
       )
       .then(
