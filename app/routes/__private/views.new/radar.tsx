@@ -1,17 +1,11 @@
 import href from "react-svg-radar-chart/build/css/index.css";
 import type { LoaderFunction } from "@remix-run/node";
-import {
-  Form,
-  useLoaderData,
-  useSubmit,
-  useSearchParams,
-} from "@remix-run/react";
+import { Form, useLoaderData, useSearchParams } from "@remix-run/react";
 import getWorkData from "~/data/getWorkData.server";
 export { default as CatchBoundary } from "@dvargas92495/app/components/DefaultCatchBoundary";
 export { default as ErrorBoundary } from "@dvargas92495/app/components/DefaultErrorBoundary";
 import AutoCompleteInput from "@dvargas92495/app/components/AutoCompleteInput";
 import RadarChart, { ChartProps, ChartData } from "react-svg-radar-chart";
-import { useRef } from "react";
 import WORK_TYPES from "~/enums/workTypes";
 import Checkbox from "@dvargas92495/app/components/Checkbox";
 import getMysqlConnection from "@dvargas92495/app/backend/mysql.server";
@@ -31,10 +25,7 @@ const RadarView = () => {
       dimensionsHidden: string[];
       contributor: string;
     }>();
-  console.log(radarData);
-
-  const submit = useSubmit();
-  const ref = useRef(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   return (
     <div className="relative flex gap-32 w-full mt-4">
@@ -48,12 +39,7 @@ const RadarView = () => {
         ]}
         size={448}
       />
-      <Form
-        method="get"
-        className={"flex gap-4"}
-        onChange={(e) => submit(e.currentTarget)}
-        ref={ref}
-      >
+      <Form method="get" className={"flex gap-4"}>
         <div className="flex flex-col gap-2 w-48">
           <span className="block mb-2 text-sm font-medium text-gray-900">
             Hide Dimensions
@@ -65,7 +51,18 @@ const RadarView = () => {
                 key={d.id}
                 value={d.id}
                 label={d.name}
-                defaultChecked={dimensionsHidden.includes(d.id)}
+                defaultChecked={!dimensionsHidden.includes(d.id)}
+                onChange={(e) =>
+                  setSearchParams(
+                    {
+                      ...searchParams,
+                      hide: e.target.checked
+                        ? searchParams.getAll("hide").filter((h) => h !== d.id)
+                        : searchParams.getAll("hide").concat(d.id),
+                    },
+                    { replace: false }
+                  )
+                }
               />
             ))}
           </div>
@@ -76,7 +73,15 @@ const RadarView = () => {
           label={"Contributor"}
           defaultValue={contributor}
           className={"w-48"}
-          onChange={() => setTimeout(() => submit(ref.current), 1)}
+          onChange={() =>
+            setSearchParams(
+              {
+                ...searchParams,
+                contributor: searchParams.get("contributor") || "",
+              },
+              { replace: false }
+            )
+          }
         />
       </Form>
     </div>
@@ -88,7 +93,7 @@ type Work = Awaited<ReturnType<typeof getWorkData>>;
 export const loader: LoaderFunction = async ({ request }) => {
   const searchParams = new URL(request.url).searchParams;
   const dimensionsHidden = searchParams.getAll("hide");
-  const contributor = searchParams.get("contributor") || "all";
+  const contributor = searchParams.get("contributor") || "everyone";
   return getMysqlConnection().then((cxn) =>
     Promise.all([
       cxn
@@ -121,12 +126,14 @@ export const loader: LoaderFunction = async ({ request }) => {
       ),
     ]).then(([work, _users]) => {
       cxn.destroy();
-      const users = _users
-        .map((u) => ({ id: u.id, label: u.name || u.username }))
-        .concat([{ id: "all", label: "ALL" }]);
+      const users = [{ id: "everyone", label: "Everyone" }].concat(
+        _users
+          .map((u) => ({ id: u.id, label: u.name || u.username }))
+          .sort((a, b) => a.label.localeCompare(b.label))
+      );
       const get = () => {
         const filteredData = (
-          contributor === "all"
+          contributor === "everyone"
             ? work.flatMap((w) => [
                 { ...w, typeId: `${w.work_type}-assigned` },
                 { ...w, typeId: `${w.work_type}-authored` },

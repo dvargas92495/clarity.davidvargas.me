@@ -159,7 +159,6 @@ const ForceView = () => {
       ) : (
         <div style={{ height: 800 }}>Loading...</div>
       )}
-      {/* </React.Fragment> */}
       <div className="mt-12">
         <h1 className="text-2xl font-bold mb-8">Settings</h1>
         <div className="flex gap-16 items-start justify-start">
