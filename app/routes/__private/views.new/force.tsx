@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useSearchParams } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/server-runtime";
 import getWorkConnections from "../../../data/getWorkConnections.server";
 import type { ForceGraph2D } from "react-force-graph";
 import type { LinkObject } from "react-force-graph-2d";
 import NumberInput from "@dvargas92495/app/components/NumberInput";
+import AutoCompleteInput from "@dvargas92495/app/components/AutoCompleteInput";
 
 const DEFAULT_NODE_RADIUS = 6;
 const DEFAULT_LINK_WIDTH_MULTIPLIER = 0.2;
@@ -30,6 +31,7 @@ const getId = (l: LinkObject, acc: "source" | "target") => {
 };
 const ForceView = () => {
   const data = useLoaderData<Awaited<ReturnType<typeof getWorkConnections>>>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [ForceGraph, setForceGraph] = useState<typeof ForceGraph2D>();
   const [nodesSelected, setNodesSelected] = useState(new Set());
   const [nodeHovered, setNodeHovered] = useState("");
@@ -140,7 +142,11 @@ const ForceView = () => {
           height={800}
           width={800}
           nodeRelSize={radius}
-          nodeLabel={(node) => nodeById[node.id || ""]?.name || "Unknown User"}
+          nodeLabel={(node) =>
+            nodeById[node.id || ""]?.name ||
+            nodeById[node.id || ""]?.username ||
+            "Unknown User"
+          }
           nodeCanvasObject={nodeCanvasObject}
           linkWidth={getLinkWidth}
           linkColor={linkColor}
@@ -177,9 +183,22 @@ const ForceView = () => {
             />
           </div>
           <div>
-            <h2 className={"text-lg font-semibold mb-3"}>
-              Other Options Coming Soon...
-            </h2>
+            <h2 className={"text-lg font-semibold mb-3"}>Filters</h2>
+            <AutoCompleteInput
+              options={data.users}
+              name={"contributor"}
+              label={"Contributor"}
+              defaultValue={data.contributor}
+              onChange={(e) =>
+                setSearchParams(
+                  {
+                    ...searchParams,
+                    contributor: e as string,
+                  },
+                  { replace: false }
+                )
+              }
+            />
           </div>
         </div>
       </div>
@@ -187,8 +206,9 @@ const ForceView = () => {
   );
 };
 
-export const loader: LoaderFunction = async () => {
-  return getWorkConnections();
+export const loader: LoaderFunction = async ({ request }) => {
+  const contributor = new URL(request.url).searchParams.get("contributor");
+  return getWorkConnections({ contributor });
 };
 
 export const handle = {

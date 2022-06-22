@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Transition } from "@headlessui/react";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useSearchParams } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/server-runtime";
 import NumberInput from "@dvargas92495/app/components/NumberInput";
 import dateFormat from "date-fns/format";
@@ -11,17 +11,20 @@ import addDays from "date-fns/addDays";
 import subYears from "date-fns/subYears";
 import subMonths from "date-fns/subMonths";
 import isAfter from "date-fns/isAfter";
-import getWorkData from "../../../data/getWorkData.server";
 import startOfWeek from "date-fns/startOfWeek";
-import WORK_TYPES from "../../../enums/workTypes";
+import WORK_TYPES, { workById } from "../../../enums/workTypes";
 import BaseInput from "@dvargas92495/app/components/BaseInput";
+import getAllUsers from "~/data/getAllUsers.server";
+import getMysqlConnection from "@dvargas92495/app/backend/mysql.server";
+import AutoCompleteInput from "@dvargas92495/app/components/AutoCompleteInput";
 
 const VALID_WORK_TYPES = WORK_TYPES.map((w) => w.name);
 
 const ColorView = () => {
   const contributions =
     useLoaderData<Awaited<ReturnType<typeof getContributionsData>>>();
-  const maxContribution = Object.values(contributions).reduce(
+  const [searchParams, setSearchParams] = useSearchParams();
+  const maxContribution = Object.values(contributions.data).reduce(
     (p, c) => (c.length > p ? c.length : p),
     0
   );
@@ -44,7 +47,7 @@ const ColorView = () => {
 
   const filteredContributions = useMemo(() => {
     return Object.fromEntries(
-      Object.entries(contributions)
+      Object.entries(contributions.data)
         .filter(([k]) =>
           isAfter(dateParse(k, "yyyy-MM-dd", new Date(0)), minDate)
         )
@@ -53,7 +56,7 @@ const ColorView = () => {
         })
         .filter(([, v]) => !!v.length)
     );
-  }, [minDate, validTypes, contributions]);
+  }, [minDate, validTypes, contributions.data]);
 
   const total = Object.values(filteredContributions).reduce(
     (p, c) => p + c.length,
@@ -175,7 +178,7 @@ const ColorView = () => {
           </tbody>
         </table>
       </div>
-      <div className="mt-12">
+      <div className="mt-12 flex gap-32">
         <h1 className="text-2xl font-bold mb-8">View Options</h1>
         <div className="flex gap-16 items-start justify-start">
           <div>
@@ -231,30 +234,125 @@ const ColorView = () => {
               />
             ))}
           </div>
+          <div>
+            <AutoCompleteInput
+              options={contributions.users}
+              name={"contributor"}
+              label={"Contributor"}
+              defaultValue={contributions.contributor}
+              onChange={(e) =>
+                setSearchParams(
+                  {
+                    ...searchParams,
+                    contributor: e as string,
+                  },
+                  { replace: false }
+                )
+              }
+            />
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-type Work = Awaited<ReturnType<typeof getWorkData>>;
+type Work = {
+  id: string;
+  date: string;
+  type: string;
+};
 
-const getContributionsData = () => {
-  return getWorkData().then((data) =>
-    data.reduce((p, c) => {
-      const key = dateFormat(new Date(c.date), "yyyy-MM-dd");
-      if (p[key]) {
-        p[key].push(c);
-      } else {
-        p[key] = [c];
-      }
-      return p;
-    }, {} as Record<string, Work>)
+const getContributionsData = (contributor: string) => {
+  return getMysqlConnection().then((cxn) =>
+    Promise.all([
+      cxn
+        .execute(
+          `SELECT 
+      w.id, 
+      w.date_closed, 
+      w.work_type,
+      w.assignee_id,
+      w.author_id,
+      w.reviewer_id 
+    FROM work w`
+        )
+        .then(
+          (a) =>
+            a as {
+              id: string;
+              date_closed: Date;
+              work_type: number;
+              author_id: string;
+              assignee_id: string;
+              reviewer_id: string;
+            }[]
+        )
+        .then((a) =>
+          a.map((r) => ({
+            id: r.id,
+            date: r.date_closed.toJSON(),
+            type: workById[r.work_type],
+            contributors: [r.assignee_id, r.author_id, r.reviewer_id].filter(
+              Boolean
+            ),
+          }))
+        ),
+      getAllUsers(cxn.execute),
+      cxn
+        .execute(
+          `SELECT 
+      c.user_id, 
+      c.work_id
+    FROM contributors c`
+        )
+        .then((a) => a as { user_id: string; work_id: string }[])
+        .then((a) =>
+          a.map((r) => ({
+            user: r.user_id,
+            work: r.work_id,
+          }))
+        ),
+    ]).then(([data, users, contributors]) => {
+      cxn.destroy();
+      const relevantContributions =
+        contributor === "everyone"
+          ? new Set<string>()
+          : new Set(
+              contributors
+                .filter((w) => w.user === contributor)
+                .map((w) => w.work)
+            );
+      const filteredData =
+        contributor === "everyone"
+          ? data
+          : data.filter(
+              (d) =>
+                relevantContributions.has(d.id) ||
+                d.contributors.includes(contributor)
+            );
+      return {
+        data: filteredData.reduce((p, c) => {
+          const key = dateFormat(new Date(c.date), "yyyy-MM-dd");
+          const item = { id: c.id, type: c.type };
+          if (p[key]) {
+            p[key].push(item);
+          } else {
+            p[key] = [item];
+          }
+          return p;
+        }, {} as Record<string, { id: string; type: string }[]>),
+        users,
+        contributor,
+      };
+    })
   );
 };
 
-export const loader: LoaderFunction = async () => {
-  return getContributionsData();
+export const loader: LoaderFunction = async ({ request }) => {
+  const contributor =
+    new URL(request.url).searchParams.get("contributor") || "everyone";
+  return getContributionsData(contributor);
 };
 
 export const handle = {

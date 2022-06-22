@@ -1,7 +1,6 @@
 import href from "react-svg-radar-chart/build/css/index.css";
 import type { LoaderFunction } from "@remix-run/node";
 import { Form, useLoaderData, useSearchParams } from "@remix-run/react";
-import getWorkData from "~/data/getWorkData.server";
 export { default as CatchBoundary } from "@dvargas92495/app/components/DefaultCatchBoundary";
 export { default as ErrorBoundary } from "@dvargas92495/app/components/DefaultErrorBoundary";
 import AutoCompleteInput from "@dvargas92495/app/components/AutoCompleteInput";
@@ -9,6 +8,7 @@ import RadarChart, { ChartProps, ChartData } from "react-svg-radar-chart";
 import WORK_TYPES from "~/enums/workTypes";
 import Checkbox from "@dvargas92495/app/components/Checkbox";
 import getMysqlConnection from "@dvargas92495/app/backend/mysql.server";
+import getAllUsers from "~/data/getAllUsers.server";
 
 const DIMENSIONS = WORK_TYPES.flatMap((w) => [
   { id: `${w.id}-assigned`, name: `${w.name} Assigned` },
@@ -73,11 +73,11 @@ const RadarView = () => {
           label={"Contributor"}
           defaultValue={contributor}
           className={"w-48"}
-          onChange={() =>
+          onChange={(e) =>
             setSearchParams(
               {
                 ...searchParams,
-                contributor: searchParams.get("contributor") || "",
+                contributor: e as string,
               },
               { replace: false }
             )
@@ -87,8 +87,6 @@ const RadarView = () => {
     </div>
   );
 };
-
-type Work = Awaited<ReturnType<typeof getWorkData>>;
 
 export const loader: LoaderFunction = async ({ request }) => {
   const searchParams = new URL(request.url).searchParams;
@@ -116,21 +114,9 @@ export const loader: LoaderFunction = async ({ request }) => {
               assignee_id?: string;
             }[]
         ),
-      cxn.execute(`SELECT id, name, username FROM users`).then(
-        (a) =>
-          a as {
-            id: string;
-            name: string;
-            username: string;
-          }[]
-      ),
-    ]).then(([work, _users]) => {
+      getAllUsers(cxn.execute),
+    ]).then(([work, users]) => {
       cxn.destroy();
-      const users = [{ id: "everyone", label: "Everyone" }].concat(
-        _users
-          .map((u) => ({ id: u.id, label: u.name || u.username }))
-          .sort((a, b) => a.label.localeCompare(b.label))
-      );
       const get = () => {
         const filteredData = (
           contributor === "everyone"
@@ -167,7 +153,7 @@ export const loader: LoaderFunction = async ({ request }) => {
             p[c.typeId] = new Set([c.id]);
           }
           return p;
-        }, {} as Record<Work[number]["type"], Set<string>>);
+        }, {} as Record<string, Set<string>>);
         const maxWork = Object.values(groupedByType).reduce(
           (p, c) => (c.size > p ? c.size : p),
           1
