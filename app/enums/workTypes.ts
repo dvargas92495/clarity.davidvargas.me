@@ -2,7 +2,7 @@ const WORK_TYPES = [
   { id: 1, name: "Task" },
   { id: 2, name: "Project" },
   { id: 3, name: "Initiative" },
-];
+] as const;
 
 export const workById = Object.fromEntries(
   WORK_TYPES.map((w) => [w.id, w.name])
