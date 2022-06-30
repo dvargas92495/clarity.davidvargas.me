@@ -9,14 +9,16 @@ const uploadJson: UploadHandler = async ({ filename, data }) => {
     Body.push(datum);
   }
   const Key = `data/${filename}`;
-  return s3
-    .upload({
-      Bucket: "clarity.davidvargas.me",
-      Key,
-      Body: Buffer.concat(Body),
-    })
-    .promise()
-    .then(() => Key);
+  return filename
+    ? s3
+        .upload({
+          Bucket: "clarity.davidvargas.me",
+          Key,
+          Body: Buffer.concat(Body),
+        })
+        .promise()
+        .then(() => Key)
+    : new TextDecoder().decode(Body[0]);
 };
 
 export default uploadJson;
