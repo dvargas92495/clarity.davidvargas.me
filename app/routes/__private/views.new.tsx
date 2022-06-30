@@ -53,6 +53,21 @@ const VIEW_TYPES = [
         <path d="M23 8c0 1.1-.9 2-2 2-.18 0-.35-.02-" />
       </svg>
     )
+  },
+  {
+    id: "Bar",
+    Icon: (
+      <svg
+        viewBox="0 0 24 24"
+        focusable="false"
+        width="1em"
+        height="1em"
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        <path d="M23 8c0 1.1-.9 2-2 2-.18 0-.35-.02-" />
+      </svg>
+    )
   }
 ];
 

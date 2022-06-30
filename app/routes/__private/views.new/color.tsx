@@ -257,12 +257,6 @@ const ColorView = () => {
   );
 };
 
-type Work = {
-  id: string;
-  date: string;
-  type: string;
-};
-
 const getContributionsData = (contributor: string) => {
   return getMysqlConnection().then((cxn) =>
     Promise.all([
@@ -341,7 +335,7 @@ const getContributionsData = (contributor: string) => {
             p[key] = [item];
           }
           return p;
-        }, {} as Record<string, { id: string; type: string }[]>),
+        }, {} as Record<string, { id: string; type: "Task" | "Project" | "Initiative" }[]>),
         users,
         contributor,
       };

@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@dvargas92495/app": "^0.8.13",
+    "react-charts": "^3.0.0-beta.36",
     "react-force-graph": "^1.41.12",
     "react-force-graph-2d": "^1.23.10",
     "react-svg-radar-chart": "^1.4.0",
