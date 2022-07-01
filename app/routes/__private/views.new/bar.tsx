@@ -4,24 +4,16 @@ import type { LoaderFunction } from "@remix-run/server-runtime";
 import getBarGraphData from "~/data/getBarGraphData.server";
 import { Chart, ChartOptions } from "react-charts";
 import { useMemo } from "react";
+import Select from "@dvargas92495/app/components/Select";
 
 type BarGraphData = Awaited<ReturnType<typeof getBarGraphData>>;
 
 const BarView = () => {
-  const { data, users, contributor } = useLoaderData<BarGraphData>();
+  const { data, users, contributor, contribution, x } = useLoaderData<BarGraphData>();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const barChartData = Object.entries(data).map(([label, items]) => ({
-    label,
-    data: [
-      {
-        type: "contributions",
-        amount: items.length,
-      },
-    ],
-  }));
-  const barChartOptions = useMemo<
-    Omit<ChartOptions<typeof barChartData[number]["data"][number]>, "data">
+  const options = useMemo<
+    Omit<ChartOptions<typeof data[number]["data"][number]>, "data">
   >(
     () => ({
       primaryAxis: { getValue: (data) => data.type },
@@ -34,12 +26,12 @@ const BarView = () => {
       <div className={"w-full max-w-3xl"}>
         <Chart
           options={{
-            data: barChartData,
-            ...barChartOptions,
+            data,
+            ...options,
           }}
         />
       </div>
-      <Form method="get" className={"flex gap-4"}>
+      <Form method="get" className={"flex gap-4 flex-col"}>
         <AutoCompleteInput
           options={users}
           name={"contributor"}
@@ -49,8 +41,45 @@ const BarView = () => {
           onChange={(e) =>
             setSearchParams(
               {
-                ...searchParams,
+                ...Object.fromEntries(searchParams),
                 contributor: e as string,
+              },
+              { replace: false }
+            )
+          }
+        />
+        <Select
+          name="contribution"
+          label="Contribution"
+          defaultValue={contribution}
+          options={[
+            "all",
+            "tasks",
+            "projects",
+            "replies",
+            "wiki",
+            "initiatives",
+          ]}
+          onChange={(e) =>
+            setSearchParams(
+              {
+                ...Object.fromEntries(searchParams),
+                contribution: e as string,
+              },
+              { replace: false }
+            )
+          }
+        />
+        <Select
+          name="x"
+          label="X Axis"
+          defaultValue={x}
+          options={["count", "month", "tags"]}
+          onChange={(e) =>
+            setSearchParams(
+              {
+                ...Object.fromEntries(searchParams),
+                x: e as string,
               },
               { replace: false }
             )
@@ -62,9 +91,12 @@ const BarView = () => {
 };
 
 export const loader: LoaderFunction = async ({ request }) => {
-  const contributor =
-    new URL(request.url).searchParams.get("contributor") || "everyone";
-  return getBarGraphData(contributor);
+  const { searchParams } = new URL(request.url);
+  const contributor = searchParams.get("contributor") || "everyone";
+  const x = searchParams.get("x") || "count";
+  const contribution = searchParams.get("contribution") || "all";
+  // @ts-ignore
+  return getBarGraphData({ contributor, x, contribution });
 };
 
 export const handle = {
