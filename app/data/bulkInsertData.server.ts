@@ -15,7 +15,7 @@ const zProject = () =>
       projectId: z.number(),
       name: z.string(),
       dateCreated: z.string(),
-      dateClosed: z.string(),
+      dateClosed: z.string().nullable(),
       assigneeId: z.string().nullable(),
       workType: z.enum(
         [WORK_TYPES[0].name, ...WORK_TYPES.slice(1).map((w) => w.name)]
@@ -26,7 +26,12 @@ const zProject = () =>
       ),
       authorId: z.string(),
       reviewerId: z.string().nullable(),
-      contributorIds: z.string(),
+      contributorIds: z
+        .string()
+        .or(z.string().array())
+        .transform((w) =>
+          typeof w === "string" ? z.string().array().parse(JSON.parse(w)) : w
+        ),
       tags: z.string().array().optional(),
     })
     .array();
@@ -47,6 +52,72 @@ const insertDeletedUsers = (execute: Execute, deletedUsers: string[]) =>
       "users"
     )
   );
+
+const insertWork = (
+  execute: Execute,
+  work: z.infer<ReturnType<typeof zProject>>
+) => {
+  const deletedUsers = Array.from(
+    new Set(
+      work.flatMap((w) =>
+        [w.assigneeId, w.authorId, w.reviewerId].concat(
+          typeof w.contributorIds === "string"
+            ? JSON.parse(w.contributorIds)
+            : w.contributorIds
+        )
+      )
+    )
+  ).filter(Boolean) as string[];
+  return insertDeletedUsers(execute, deletedUsers).then(() =>
+    execute(
+      `INSERT INTO work (id, project_id, name, date_created, date_closed, assignee_id, work_type, author_id, reviewer_id) VALUES ${work
+        .map(() => `(?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .join(",")} ON DUPLICATE KEY UPDATE 
+        project_id=VALUES(project_id), name=VALUES(name), 
+        date_created=VALUES(date_created), date_closed=VALUES(date_closed), 
+        assignee_id=VALUES(assignee_id), work_type=VALUES(work_type), 
+        author_id=VALUES(author_id), reviewer_id=VALUES(reviewer_id)`,
+      work.flatMap((w) => [
+        w.id,
+        w.projectId,
+        w.name,
+        new Date(w.dateCreated),
+        w.dateClosed ? new Date(w.dateClosed) : new Date(),
+        w.assigneeId,
+        idByWork[w.workType],
+        w.authorId,
+        w.reviewerId,
+      ])
+    )
+      .then((r) =>
+        console.log(
+          "Changed",
+          (r as mysql.ResultSetHeader).changedRows,
+          "work",
+          "Added",
+          (r as mysql.ResultSetHeader).affectedRows,
+          "work"
+        )
+      )
+      .then(() =>
+        execute(
+          `INSERT INTO contributors (id, user_id, work_id) VALUES ${work
+            .flatMap((w) => w.contributorIds.flatMap(() => `(UUID(), ?, ?)`))
+            .join(",")} ON DUPLICATE KEY UPDATE id=id`,
+          work.flatMap((w) => w.contributorIds.flatMap((c) => [c, w.id]))
+        ).then((r) =>
+          console.log(
+            "Updated",
+            (r as mysql.ResultSetHeader).changedRows,
+            "contributors",
+            "Added",
+            (r as mysql.ResultSetHeader).affectedRows,
+            "contributors"
+          )
+        )
+      )
+  );
+};
 
 const bulkInsertData = ({
   schema,
@@ -101,80 +172,10 @@ const bulkInsertData = ({
           });
       } else if (schema === "projects") {
         const work = zProject().parse(args);
-        const deletedUsers = Array.from(
-          new Set(
-            work.flatMap((w) =>
-              [w.assigneeId, w.authorId, w.reviewerId].concat(
-                JSON.parse(w.contributorIds)
-              )
-            )
-          )
-        ).filter(Boolean) as string[];
-        return insertDeletedUsers(cxn.execute, deletedUsers)
-          .then(() =>
-            cxn
-              .execute(
-                `INSERT INTO work (id, project_id, name, date_created, date_closed, assignee_id, work_type, author_id, reviewer_id) VALUES ${work
-                  .map(() => `(?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-                  .join(",")} ON DUPLICATE KEY UPDATE 
-              project_id=VALUES(project_id), name=VALUES(name), 
-              date_created=VALUES(date_created), date_closed=VALUES(date_closed), 
-              assignee_id=VALUES(assignee_id), work_type=VALUES(work_type), 
-              author_id=VALUES(author_id), reviewer_id=VALUES(reviewer_id)`,
-                work.flatMap((w) => [
-                  w.id,
-                  w.projectId,
-                  w.name,
-                  new Date(w.dateCreated),
-                  new Date(w.dateClosed),
-                  w.assigneeId,
-                  idByWork[w.workType],
-                  w.authorId,
-                  w.reviewerId,
-                ])
-              )
-              .then((r) =>
-                console.log(
-                  "Changed",
-                  (r as mysql.ResultSetHeader).changedRows,
-                  "work",
-                  "Added",
-                  (r as mysql.ResultSetHeader).affectedRows,
-                  "work"
-                )
-              )
-          )
-          .then(() =>
-            cxn
-              .execute(
-                `INSERT INTO contributors (id, user_id, work_id) VALUES ${work
-                  .flatMap((w) =>
-                    JSON.parse(w.contributorIds).flatMap(() => `(UUID(), ?, ?)`)
-                  )
-                  .join(",")} ON DUPLICATE KEY UPDATE id=id`,
-                work.flatMap((w) =>
-                  z
-                    .string()
-                    .array()
-                    .parse(JSON.parse(w.contributorIds))
-                    .flatMap((c) => [c, w.id])
-                )
-              )
-              .then((r) =>
-                console.log(
-                  "Updated",
-                  (r as mysql.ResultSetHeader).changedRows,
-                  "contributors",
-                  "Added",
-                  (r as mysql.ResultSetHeader).affectedRows,
-                  "contributors"
-                )
-              )
-          )
-          .then(() => {
-            cxn.destroy();
-            return Promise.resolve();
-          });
+        return insertWork(cxn.execute, work).then(() => {
+          cxn.destroy();
+          return Promise.resolve();
+        });
       } else if (schema === "tags") {
         const { tagsDict: tags, completedProjects: work } = z
           .object({
@@ -182,14 +183,16 @@ const bulkInsertData = ({
             tagsDict: z.record(z.object({ id: z.string(), name: z.string() })),
           })
           .parse(args);
-        return cxn
-          .execute(
-            `INSERT INTO tags (id, name) VALUES ${Object.keys(tags)
-              .map(() => `(?, ?)`)
-              .join(",")} ON DUPLICATE KEY UPDATE name=name`,
-            Object.values(tags)
-              .map((t) => [t.id, t.name])
-              .flat()
+        return insertWork(cxn.execute, work)
+          .then(() =>
+            cxn.execute(
+              `INSERT INTO tags (id, name) VALUES ${Object.keys(tags)
+                .map(() => `(?, ?)`)
+                .join(",")} ON DUPLICATE KEY UPDATE name=name`,
+              Object.values(tags)
+                .map((t) => [t.id, t.name])
+                .flat()
+            )
           )
           .then(() => {
             return cxn.execute(

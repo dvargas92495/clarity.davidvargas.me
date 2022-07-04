@@ -3,7 +3,6 @@ import { idByWork, workById } from "~/enums/workTypes";
 import getAllUsers from "./getAllUsers.server";
 import dateFormat from "date-fns/format";
 import dateParse from "date-fns/parse";
-import { ChartOptions } from "react-charts";
 
 const getBarGraphData = ({
   x,
@@ -259,7 +258,7 @@ const getBarGraphData = ({
             label,
             data: allTags.map((type) => ({
               type,
-              amount: amountByTag[type][label]|| 0,
+              amount: amountByTag[type][label] || 0,
             })),
           })
         );

@@ -1,17 +1,18 @@
 import AutoCompleteInput from "@dvargas92495/app/components/AutoCompleteInput";
 import { Form, useLoaderData, useSearchParams } from "@remix-run/react";
 import type { LoaderFunction } from "@remix-run/server-runtime";
-import getBarGraphData from "~/data/getBarGraphData.server";
+import getLineGraphData from "~/data/getLineGraphData.server";
 import { Chart, ChartOptions } from "react-charts";
 import { useMemo } from "react";
 import Select from "@dvargas92495/app/components/Select";
 import Title from "@dvargas92495/app/components/Title";
+import { ContributionType } from "~/enums/workTypes";
 
-type BarGraphData = Awaited<ReturnType<typeof getBarGraphData>>;
+type LineGraphData = Awaited<ReturnType<typeof getLineGraphData>>;
 
-const BarView = () => {
-  const { data, users, contributor, contribution, x } =
-    useLoaderData<BarGraphData>();
+const LineView = () => {
+  const { data, users, contributor, contribution, tag, tags } =
+    useLoaderData<LineGraphData>();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const options = useMemo<
@@ -19,22 +20,26 @@ const BarView = () => {
   >(
     () => ({
       primaryAxis: { getValue: (data) => data.type },
-      secondaryAxes: [{ getValue: (data) => data.amount, elementType: "bar" }],
+      secondaryAxes: [{ getValue: (data) => data.amount, elementType: "line" }],
     }),
     []
   );
   return (
     <div className="relative flex gap-32 w-full mt-4 h-96 items-stretch">
       <div className={"w-full max-w-3xl"}>
-        <Chart
-          options={{
-            data,
-            ...options,
-          }}
-        />
+        {!data[0].data.length ? (
+          <Title>No data found</Title>
+        ) : (
+          <Chart
+            options={{
+              data,
+              ...options,
+            }}
+          />
+        )}
       </div>
       <Form method="get" className={"flex gap-4 flex-col"}>
-        <Title>Options</Title>
+        <Title>Filters</Title>
         <AutoCompleteInput
           options={users}
           name={"contributor"}
@@ -73,16 +78,16 @@ const BarView = () => {
             )
           }
         />
-        <Select
-          name="x"
-          label="X Axis"
-          defaultValue={x}
-          options={["count", "month", "tags"]}
+        <AutoCompleteInput
+          name="tag"
+          label="Tag"
+          defaultValue={tag}
+          options={tags.map((t) => ({ id: t, label: t }))}
           onChange={(e) =>
             setSearchParams(
               {
                 ...Object.fromEntries(searchParams),
-                x: e as string,
+                tag: e as string,
               },
               { replace: false }
             )
@@ -96,14 +101,14 @@ const BarView = () => {
 export const loader: LoaderFunction = async ({ request }) => {
   const { searchParams } = new URL(request.url);
   const contributor = searchParams.get("contributor") || "everyone";
-  const x = searchParams.get("x") || "count";
-  const contribution = searchParams.get("contribution") || "all";
-  // @ts-ignore
-  return getBarGraphData({ contributor, x, contribution });
+  const tag = searchParams.get("tag") || "all";
+  const contribution = (searchParams.get("contribution") ||
+    "all") as ContributionType;
+  return getLineGraphData({ contributor, tag, contribution });
 };
 
 export const handle = {
-  header: "New Bar Graph",
+  header: "New Line Chart",
 };
 
-export default BarView;
+export default LineView;

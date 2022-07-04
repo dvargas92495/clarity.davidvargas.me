@@ -12,4 +12,6 @@ export const idByWork = Object.fromEntries(
   WORK_TYPES.map((w) => [w.name, w.id])
 );
 
+export type ContributionType = `${Lowercase<(typeof WORK_TYPES[number]['name'])>}s` | "all" | "wiki" | "replies"
+
 export default WORK_TYPES;
