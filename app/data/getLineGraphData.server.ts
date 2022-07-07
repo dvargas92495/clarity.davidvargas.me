@@ -4,7 +4,29 @@ import getMysqlConnection, {
 import { ContributionType, idByWork, workById } from "~/enums/workTypes";
 import getAllUsers from "./getAllUsers.server";
 import dateFormat from "date-fns/format";
-import dateParse from "date-fns/parse";
+import { z } from "zod";
+
+export type Interval = "week" | "month" | "quarter";
+const schema = z.object({
+  tag: z.string().default("all"),
+  contributor: z.string().default("everyone"),
+  contribution: z
+    .enum(["week", "month", "quarter", "all", "wiki", "replies"])
+    .default("all"),
+  interval: z.enum(["week", "month", "quarter"]).default("month"),
+});
+
+const intervalFormats = {
+  month: "MM/yyyy",
+  quarter: "QQ/yyyy",
+  week: "II/yyyy",
+};
+
+const intervalLength = {
+  month: 12,
+  quarter: 4,
+  week: 52,
+};
 
 const getAllTags = (execute: Execute) =>
   execute(
@@ -13,15 +35,8 @@ FROM tags t`,
     []
   ).then((a) => ["all"].concat((a as { name: string }[]).map((a) => a.name)));
 
-const getBarGraphData = ({
-  tag,
-  contributor,
-  contribution,
-}: {
-  tag: string;
-  contributor: string;
-  contribution: ContributionType;
-}) => {
+const getBarGraphData = (args: Record<string, string>) => {
+  const { contributor, tag, contribution, interval } = schema.parse(args);
   return getMysqlConnection().then((cxn) =>
     Promise.all([
       (contribution === "all"
@@ -159,47 +174,75 @@ const getBarGraphData = ({
           : contributor === "everyone"
           ? wikis
           : wikis.filter((d) => d.created_by === contributor);
-      const amountByMonth: Record<string, number> = {};
-      const monthSet = new Set<string>();
+      const amountByInterval: Record<string, number> = {};
+      const intervalSet = new Set<string>();
       filteredWork.forEach((w) => {
-        const month = dateFormat(w.date, "MM/yyyy");
-        monthSet.add(month);
-        if (amountByMonth[month]) {
-          amountByMonth[month]++;
+        const key = dateFormat(w.date, intervalFormats[interval]);
+        intervalSet.add(key);
+        if (amountByInterval[key]) {
+          amountByInterval[key]++;
         } else {
-          amountByMonth[month] = 1;
+          amountByInterval[key] = 1;
         }
       });
       filteredReplies.forEach((w) => {
-        const month = dateFormat(w.date, "MM/yyyy");
-        monthSet.add(month);
-        if (amountByMonth[month]) {
-          amountByMonth[month]++;
+        const key = dateFormat(w.date, intervalFormats[interval]);
+        intervalSet.add(key);
+        if (amountByInterval[key]) {
+          amountByInterval[key]++;
         } else {
-          amountByMonth[month] = 1;
+          amountByInterval[key] = 1;
         }
       });
       filteredWikis.forEach((w) => {
-        const month = dateFormat(w.day, "MM/yyyy");
-        monthSet.add(month);
-        if (amountByMonth[month]) {
-          amountByMonth[month]++;
+        const key = dateFormat(w.day, intervalFormats[interval]);
+        intervalSet.add(key);
+        if (amountByInterval[key]) {
+          amountByInterval[key]++;
         } else {
-          amountByMonth[month] = 1;
+          amountByInterval[key] = 1;
         }
       });
-      const months = Array.from(monthSet).sort(
-        (a, b) =>
-          dateParse(a, "MM/yyyy", new Date()).valueOf() -
-          dateParse(b, "MM/yyyy", new Date()).valueOf()
+      const len = intervalLength[interval];
+      const { minKey, maxKey } = Array.from(intervalSet)
+        .map((m) => m.split("/").map((k) => Number(k)))
+        .map(([i, y]) => i - 1 + y * len)
+        .reduce(
+          (p, c) => ({
+            minKey: c < p.minKey ? c : p.minKey,
+            maxKey: c > p.maxKey ? c : p.maxKey,
+          }),
+          {
+            minKey: Number.MAX_SAFE_INTEGER,
+            maxKey: 0,
+          }
+        );
+      console.log(intervalSet);
+      console.log(
+        Array.from(intervalSet)
+          .map((m) => m.split("/").map((k) => Number(k)))
+          .map(([i, y]) => i - 1 + y * len)
       );
-      const data = [{
-        label: contribution,
-        data: months.map((type) => ({
-          type,
-          amount: amountByMonth[type] || 0,
-        })),
-      }];
+      console.log(maxKey - minKey + 1);
+      const keys = intervalSet.size
+        ? Array(maxKey - minKey + 1)
+            .fill(null)
+            .map((_, s) => {
+              const m = s + minKey;
+              const key = m % len;
+              const year = (m - key) / len;
+              return `${(key + 1).toString().padStart(2, "0")}/${year}`;
+            })
+        : [];
+      const data = [
+        {
+          label: contribution,
+          data: keys.map((type) => ({
+            type,
+            amount: amountByInterval[type] || 0,
+          })),
+        },
+      ];
       return {
         data,
         users,
@@ -207,6 +250,7 @@ const getBarGraphData = ({
         tag,
         tags,
         contribution,
+        interval,
       };
     })
   );

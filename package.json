@@ -10,7 +10,7 @@
     "build": "fuego build --readable",
     "format": "prettier --write \"**/*.tsx\"",
     "generate:css": "tailwindcss -o ./app/tailwind.css",
-    "postinstall": "fuego postinstall \"d3-selection\"",
+    "postinstall": "fuego postinstall",
     "lint": "eslint . --ext .ts,.tsx",
     "dev": "fuego dev",
     "api": "fuego api",
@@ -39,5 +39,12 @@
     "ts-node": "10.3.0",
     "tslint-config-prettier": "1.18.0",
     "tslint-react-hooks": "2.2.2"
+  },
+  "fuego": {
+    "remix": {
+      "modulesToTranspile": [
+        "d3-selection"
+      ]
+    }
   }
 }

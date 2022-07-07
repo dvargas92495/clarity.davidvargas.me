@@ -6,12 +6,11 @@ import { Chart, ChartOptions } from "react-charts";
 import { useMemo } from "react";
 import Select from "@dvargas92495/app/components/Select";
 import Title from "@dvargas92495/app/components/Title";
-import { ContributionType } from "~/enums/workTypes";
 
 type LineGraphData = Awaited<ReturnType<typeof getLineGraphData>>;
 
 const LineView = () => {
-  const { data, users, contributor, contribution, tag, tags } =
+  const { data, users, contributor, contribution, tag, tags, interval } =
     useLoaderData<LineGraphData>();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -93,6 +92,21 @@ const LineView = () => {
             )
           }
         />
+        <Select
+          name="interval"
+          label="Interval"
+          defaultValue={interval}
+          options={["month", "week", "quarter"]}
+          onChange={(e) =>
+            setSearchParams(
+              {
+                ...Object.fromEntries(searchParams),
+                interval: e as string,
+              },
+              { replace: false }
+            )
+          }
+        />
       </Form>
     </div>
   );
@@ -100,11 +114,7 @@ const LineView = () => {
 
 export const loader: LoaderFunction = async ({ request }) => {
   const { searchParams } = new URL(request.url);
-  const contributor = searchParams.get("contributor") || "everyone";
-  const tag = searchParams.get("tag") || "all";
-  const contribution = (searchParams.get("contribution") ||
-    "all") as ContributionType;
-  return getLineGraphData({ contributor, tag, contribution });
+  return getLineGraphData(Object.fromEntries(searchParams));
 };
 
 export const handle = {
