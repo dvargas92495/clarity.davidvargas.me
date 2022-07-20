@@ -10,8 +10,16 @@ import Title from "@dvargas92495/app/components/Title";
 type LineGraphData = Awaited<ReturnType<typeof getLineGraphData>>;
 
 const LineView = () => {
-  const { data, users, contributor, contribution, tag, tags, interval } =
-    useLoaderData<LineGraphData>();
+  const {
+    data,
+    users,
+    contributor,
+    contribution,
+    tag,
+    tags,
+    interval,
+    timespan,
+  } = useLoaderData<LineGraphData>();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const options = useMemo<
@@ -39,6 +47,27 @@ const LineView = () => {
       </div>
       <Form method="get" className={"flex gap-4 flex-col"}>
         <Title>Filters</Title>
+        <Select
+          name="timespan"
+          label="Timespan"
+          defaultValue={timespan}
+          onChange={(e) =>
+            setSearchParams(
+              {
+                ...Object.fromEntries(searchParams),
+                timespan: e as string,
+              },
+              { replace: false }
+            )
+          }
+          options={[
+            { id: "all", label: "All time" },
+            { id: "12", label: "Last 12 months" },
+            { id: "9", label: "Last 9 months" },
+            { id: "6", label: "Last 6 months" },
+            { id: "3", label: "Last 3 months" },
+          ]}
+        />
         <AutoCompleteInput
           options={users}
           name={"contributor"}

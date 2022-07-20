@@ -179,7 +179,6 @@ const ColorView = () => {
         </table>
       </div>
       <div className="mt-12 flex gap-32">
-        <h1 className="text-2xl font-bold mb-8">View Options</h1>
         <div className="flex gap-16 items-start justify-start">
           <div>
             <h2 className={"text-lg font-semibold mb-3"}>Color Thresholds</h2>
