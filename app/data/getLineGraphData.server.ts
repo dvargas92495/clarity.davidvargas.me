@@ -11,7 +11,7 @@ const schema = z.object({
   tag: z.string().default("all"),
   contributor: z.string().default("everyone"),
   contribution: z
-    .enum(["week", "month", "quarter", "all", "wiki", "replies"])
+    .enum(["all", "tasks", "projects", "replies", "wiki", "initiatives"])
     .default("all"),
   interval: z.enum(["week", "month", "quarter"]).default("month"),
 });
@@ -217,13 +217,6 @@ const getBarGraphData = (args: Record<string, string>) => {
             maxKey: 0,
           }
         );
-      console.log(intervalSet);
-      console.log(
-        Array.from(intervalSet)
-          .map((m) => m.split("/").map((k) => Number(k)))
-          .map(([i, y]) => i - 1 + y * len)
-      );
-      console.log(maxKey - minKey + 1);
       const keys = intervalSet.size
         ? Array(maxKey - minKey + 1)
             .fill(null)
