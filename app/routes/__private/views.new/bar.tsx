@@ -6,11 +6,12 @@ import { Chart, ChartOptions } from "react-charts";
 import { useMemo } from "react";
 import Select from "@dvargas92495/app/components/Select";
 import Title from "@dvargas92495/app/components/Title";
+import NumberInput from "@dvargas92495/app/components/NumberInput";
 
 type BarGraphData = Awaited<ReturnType<typeof getBarGraphData>>;
 
 const BarView = () => {
-  const { data, users, contributor, contribution, x } =
+  const { data, users, contributor, contribution, x, minimum } =
     useLoaderData<BarGraphData>();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -61,7 +62,7 @@ const BarView = () => {
             "projects",
             "replies",
             "wiki",
-            "initiatives",
+            "goals",
           ]}
           onChange={(e) =>
             setSearchParams(
@@ -77,12 +78,26 @@ const BarView = () => {
           name="x"
           label="X Axis"
           defaultValue={x}
-          options={["count", "month", "tags"]}
+          options={["count", "month", "tags", "contributor"]}
           onChange={(e) =>
             setSearchParams(
               {
                 ...Object.fromEntries(searchParams),
                 x: e as string,
+              },
+              { replace: false }
+            )
+          }
+        />
+        <NumberInput
+          name={"minimum"}
+          label="Minimum"
+          defaultValue={minimum}
+          onChange={(e) =>
+            setSearchParams(
+              {
+                ...Object.fromEntries(searchParams),
+                minimum: e.target.value as string,
               },
               { replace: false }
             )
@@ -98,8 +113,9 @@ export const loader: LoaderFunction = async ({ request }) => {
   const contributor = searchParams.get("contributor") || "everyone";
   const x = searchParams.get("x") || "count";
   const contribution = searchParams.get("contribution") || "all";
+  const minimum = searchParams.get("minimum") || 0;
   // @ts-ignore
-  return getBarGraphData({ contributor, x, contribution });
+  return getBarGraphData({ contributor, x, contribution, minimum });
 };
 
 export const handle = {

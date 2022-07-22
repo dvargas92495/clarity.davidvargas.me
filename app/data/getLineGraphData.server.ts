@@ -14,7 +14,7 @@ const schema = z.object({
   tag: z.string().default("all"),
   contributor: z.string().default("everyone"),
   contribution: z
-    .enum(["all", "tasks", "projects", "replies", "wiki", "initiatives"])
+    .enum(["all", "tasks", "projects", "replies", "wiki", "goals"])
     .default("all"),
   interval: z.enum(["week", "month", "quarter"]).default("month"),
   timespan: z.enum(["all", "12", "9", "6", "3"]).default("all"),

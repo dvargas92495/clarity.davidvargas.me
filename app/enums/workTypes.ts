@@ -1,7 +1,7 @@
 const WORK_TYPES = [
   { id: 1, name: "Task" },
   { id: 2, name: "Project" },
-  { id: 3, name: "Initiative" },
+  { id: 3, name: "Goal" },
 ] as const;
 
 export const workById = Object.fromEntries(

@@ -3,13 +3,15 @@ import { idByWork, workById } from "~/enums/workTypes";
 import getAllUsers from "./getAllUsers.server";
 import dateFormat from "date-fns/format";
 import dateParse from "date-fns/parse";
+import { BadRequestResponse } from "@dvargas92495/app/backend/responses.server";
 
 const getBarGraphData = ({
   x,
   contributor,
   contribution,
+  minimum,
 }: {
-  x: "count" | "month" | "tags";
+  x: "count" | "month" | "tags" | "contributor";
   contributor: string;
   contribution:
     | "all"
@@ -17,7 +19,8 @@ const getBarGraphData = ({
     | "projects"
     | "replies"
     | "wiki"
-    | "initiatives";
+    | "goals";
+  minimum: number;
 }) => {
   return getMysqlConnection().then((cxn) =>
     Promise.all([
@@ -147,7 +150,7 @@ const getBarGraphData = ({
             p[key] = [c.id];
           }
           return p;
-        }, {} as Record<"Task" | "Project" | "Initiative" | "Replies" | "Wikis", string[]>);
+        }, {} as Record<"Task" | "Project" | "Goal" | "Replies" | "Wikis", string[]>);
         reducedWork["Replies"] = filteredReplies.map((r) => r.id);
         const countData = Object.fromEntries(
           Object.entries(reducedWork).map(([k, v]) => [k, v.length])
@@ -160,7 +163,7 @@ const getBarGraphData = ({
               type: "contributions",
               amount,
             },
-          ],
+          ].filter((d) => d.amount > minimum),
         }));
         return {
           data,
@@ -168,6 +171,7 @@ const getBarGraphData = ({
           contributor,
           x,
           contribution,
+          minimum,
         };
       } else if (x === "month") {
         const amountByMonth: Record<string, Record<string, number>> = {};
@@ -216,13 +220,15 @@ const getBarGraphData = ({
             dateParse(a, "MM/yyyy", new Date()).valueOf() -
             dateParse(b, "MM/yyyy", new Date()).valueOf()
         );
-        const data = ["Task", "Project", "Initiative", "Replies", "Wikis"].map(
+        const data = ["Task", "Project", "Goal", "Replies", "Wikis"].map(
           (label) => ({
             label,
-            data: months.map((type) => ({
-              type,
-              amount: amountByMonth[type][label] || 0,
-            })),
+            data: months
+              .map((type) => ({
+                type,
+                amount: amountByMonth[type][label] || 0,
+              }))
+              .filter((d) => d.amount > minimum),
           })
         );
         return {
@@ -231,9 +237,9 @@ const getBarGraphData = ({
           contributor,
           x,
           contribution,
+          minimum,
         };
-      } else {
-        // x === "tags"
+      } else if (x === "tags") {
         const amountByTag: Record<string, Record<string, number>> = {};
         const tagSet = new Set<string>();
         filteredWork.forEach((w) => {
@@ -253,13 +259,15 @@ const getBarGraphData = ({
             });
         });
         const allTags = Array.from(tagSet).sort();
-        const data = ["Task", "Project", "Initiative", "Replies", "Wikis"].map(
+        const data = ["Task", "Project", "Goal", "Replies", "Wikis"].map(
           (label) => ({
             label,
-            data: allTags.map((type) => ({
-              type,
-              amount: amountByTag[type][label] || 0,
-            })),
+            data: allTags
+              .map((type) => ({
+                type,
+                amount: amountByTag[type][label] || 0,
+              }))
+              .filter((d) => d.amount > minimum),
           })
         );
         return {
@@ -268,7 +276,71 @@ const getBarGraphData = ({
           contributor,
           x,
           contribution,
+          minimum,
         };
+      } else if (x === "contributor") {
+        const amountByContributor: Record<string, Record<string, number>> = {};
+        const contributorSet = new Set<string>();
+        filteredWork.forEach((w) =>
+          w.contributors.forEach((c) => {
+            contributorSet.add(c);
+            if (amountByContributor[c]) {
+              if (amountByContributor[c][w.type]) {
+                amountByContributor[c][w.type]++;
+              } else {
+                amountByContributor[c][w.type] = 1;
+              }
+            } else {
+              amountByContributor[c] = { [w.type]: 1 };
+            }
+          })
+        );
+        filteredReplies.forEach((w) => {
+          contributorSet.add(w.author_id);
+          if (amountByContributor[w.author_id]) {
+            if (amountByContributor[w.author_id]["Replies"]) {
+              amountByContributor[w.author_id]["Replies"]++;
+            } else {
+              amountByContributor[w.author_id]["Replies"] = 1;
+            }
+          } else {
+            amountByContributor[w.author_id] = { ["Replies"]: 1 };
+          }
+        });
+        filteredWikis.forEach((w) => {
+          contributorSet.add(w.created_by);
+          if (amountByContributor[w.created_by]) {
+            if (amountByContributor[w.created_by]["Wikis"]) {
+              amountByContributor[w.created_by]["Wikis"]++;
+            } else {
+              amountByContributor[w.created_by]["Wikis"] = 1;
+            }
+          } else {
+            amountByContributor[w.created_by] = { ["Wikis"]: 1 };
+          }
+        });
+        const data = ["Task", "Project", "Goal", "Replies", "Wikis"].map(
+          (label) => ({
+            label,
+            data: users
+              .map((type) => ({
+                type: type.label,
+                amount: amountByContributor[type.id]?.[label] || 0,
+              }))
+              .filter((d) => d.amount > minimum)
+              .sort((a, b) => b.amount - a.amount),
+          })
+        );
+        return {
+          data,
+          users,
+          contributor,
+          x,
+          contribution,
+          minimum,
+        };
+      } else {
+        throw new BadRequestResponse(`Unknown x axis type: ${x}`);
       }
     })
   );

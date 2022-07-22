@@ -458,7 +458,7 @@ const FilterDrawerContent = ({ close }: { close: () => void }) => {
               <FilterItem
                 active={active}
                 label={"Type"}
-                options={["Any", "Initiatives", "Projects", "Tasks"]}
+                options={["Any", "Goals", "Projects", "Tasks"]}
               />
             )}
           </ButtomMenu>

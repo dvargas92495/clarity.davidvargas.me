@@ -94,7 +94,7 @@ const LineView = () => {
             "projects",
             "replies",
             "wiki",
-            "initiatives",
+            "goals",
           ]}
           onChange={(e) =>
             setSearchParams(

@@ -334,7 +334,7 @@ const getContributionsData = (contributor: string) => {
             p[key] = [item];
           }
           return p;
-        }, {} as Record<string, { id: string; type: "Task" | "Project" | "Initiative" }[]>),
+        }, {} as Record<string, { id: string; type: "Task" | "Project" | "Goal" }[]>),
         users,
         contributor,
       };
