@@ -12,22 +12,24 @@ import subYears from "date-fns/subYears";
 import subMonths from "date-fns/subMonths";
 import isAfter from "date-fns/isAfter";
 import startOfWeek from "date-fns/startOfWeek";
-import WORK_TYPES, { workById } from "../../../enums/workTypes";
+import { workById } from "../../../enums/workTypes";
 import BaseInput from "@dvargas92495/app/components/BaseInput";
 import getAllUsers from "~/data/getAllUsers.server";
 import getMysqlConnection from "@dvargas92495/app/backend/mysql.server";
 import AutoCompleteInput from "@dvargas92495/app/components/AutoCompleteInput";
 
-const VALID_WORK_TYPES = WORK_TYPES.map((w) => w.name);
+const VALID_WORK_TYPES = [
+  "Task",
+  "Project",
+  "Goal",
+  "Replies",
+  "Wikis",
+] as const;
 
 const ColorView = () => {
   const contributions =
     useLoaderData<Awaited<ReturnType<typeof getContributionsData>>>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const maxContribution = Object.values(contributions.data).reduce(
-    (p, c) => (c.length > p ? c.length : p),
-    0
-  );
   const defaultThresholds = useMemo(
     () => [
       { level: 15, background: "#155b1e" },
@@ -36,14 +38,16 @@ const ColorView = () => {
       { level: 2, background: "#a0d27f" },
       { level: 1, background: "#b9e1a8" },
     ],
-    [maxContribution]
+    []
   );
   const [colorThresholds, setColorThresholds] = useState(defaultThresholds);
 
   const maxDate = new Date();
   const defaultMinDate = startOfWeek(subYears(maxDate, 1)).valueOf();
   const [minDate, setMinDate] = useState(defaultMinDate);
-  const [validTypes, setValidTypes] = useState(new Set(VALID_WORK_TYPES));
+  const [validTypes, setValidTypes] = useState(
+    new Set<WorkType>(VALID_WORK_TYPES)
+  );
 
   const filteredContributions = useMemo(() => {
     return Object.fromEntries(
@@ -59,7 +63,7 @@ const ColorView = () => {
   }, [minDate, validTypes, contributions.data]);
 
   const total = Object.values(filteredContributions).reduce(
-    (p, c) => p + c.length,
+    (p, c) => p + c.reduce((pp, cc) => pp + cc.count, 0),
     0
   );
   const numColumns = differenceInWeeks(maxDate, minDate) + 1;
@@ -256,6 +260,8 @@ const ColorView = () => {
   );
 };
 
+type WorkType = "Task" | "Project" | "Goal" | "Replies" | "Wikis";
+
 const getContributionsData = (contributor: string) => {
   return getMysqlConnection().then((cxn) =>
     Promise.all([
@@ -285,7 +291,7 @@ const getContributionsData = (contributor: string) => {
           a.map((r) => ({
             id: r.id,
             date: r.date_closed.toJSON(),
-            type: workById[r.work_type],
+            type: workById[r.work_type] as WorkType,
             contributors: [r.assignee_id, r.author_id, r.reviewer_id].filter(
               Boolean
             ),
@@ -306,7 +312,19 @@ const getContributionsData = (contributor: string) => {
             work: r.work_id,
           }))
         ),
-    ]).then(([data, users, contributors]) => {
+      cxn
+        .execute(`SELECT r.id, r.author_id, r.date FROM replies r`)
+        .then((a) => a as { author_id: string; id: string; date: Date }[]),
+      cxn
+        .execute(
+          `SELECT w.id, w.created_by, w.count, w.day
+      FROM wiki_contributions w`
+        )
+        .then(
+          (a) =>
+            a as { created_by: string; id: string; count: number; day: Date }[]
+        ),
+    ]).then(([data, users, contributors, replies, wikis]) => {
       cxn.destroy();
       const relevantContributions =
         contributor === "everyone"
@@ -316,25 +334,49 @@ const getContributionsData = (contributor: string) => {
                 .filter((w) => w.user === contributor)
                 .map((w) => w.work)
             );
-      const filteredData =
+      const filteredData = (
         contributor === "everyone"
           ? data
           : data.filter(
               (d) =>
                 relevantContributions.has(d.id) ||
                 d.contributors.includes(contributor)
-            );
+            )
+      ).map(({ contributors, ...data }) => ({ ...data, count: 1 }));
+      const filteredReplies = (
+        contributor === "everyone"
+          ? replies
+          : replies.filter((d) => d.author_id === contributor)
+      ).map((r) => ({
+        id: r.id,
+        date: r.date.toJSON(),
+        type: "Replies" as const,
+        count: 1,
+      }));
+      const filteredWikis = (
+        contributor === "everyone"
+          ? wikis
+          : wikis.filter((d) => d.created_by === contributor)
+      ).map((r) => ({
+        id: r.id,
+        date: r.day.toJSON(),
+        type: "Wikis" as const,
+        count: r.count,
+      }));
       return {
-        data: filteredData.reduce((p, c) => {
-          const key = dateFormat(new Date(c.date), "yyyy-MM-dd");
-          const item = { id: c.id, type: c.type };
-          if (p[key]) {
-            p[key].push(item);
-          } else {
-            p[key] = [item];
-          }
-          return p;
-        }, {} as Record<string, { id: string; type: "Task" | "Project" | "Goal" }[]>),
+        data: filteredData
+          .concat(filteredReplies)
+          .concat(filteredWikis)
+          .reduce((p, c) => {
+            const key = dateFormat(new Date(c.date), "yyyy-MM-dd");
+            const item = { id: c.id, type: c.type, count: c.count || 1 };
+            if (p[key]) {
+              p[key].push(item);
+            } else {
+              p[key] = [item];
+            }
+            return p;
+          }, {} as Record<string, { id: string; type: WorkType; count: number }[]>),
         users,
         contributor,
       };

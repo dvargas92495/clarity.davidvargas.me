@@ -10,10 +10,15 @@ import Checkbox from "@dvargas92495/app/components/Checkbox";
 import getMysqlConnection from "@dvargas92495/app/backend/mysql.server";
 import getAllUsers from "~/data/getAllUsers.server";
 
-const DIMENSIONS = WORK_TYPES.flatMap((w) => [
-  { id: `${w.id}-assigned`, name: `${w.name} Assigned` },
-  { id: `${w.id}-authored`, name: `${w.name} Authored` },
-]);
+const DIMENSIONS = WORK_TYPES.filter((w) => w.name !== "Initiative")
+  .flatMap((w) => [
+    { id: `${w.id}-assigned`, name: `${w.name} Assigned` },
+    { id: `${w.id}-authored`, name: `${w.name} Authored` },
+  ])
+  .concat([
+    { id: "replies", name: "Replies" },
+    { id: "wikis", name: "Wiki Contributions" },
+  ]);
 const nameById = Object.fromEntries(DIMENSIONS.map((d) => [d.id, d.name]));
 
 const RadarView = () => {
@@ -115,7 +120,19 @@ export const loader: LoaderFunction = async ({ request }) => {
             }[]
         ),
       getAllUsers(cxn.execute),
-    ]).then(([work, users]) => {
+      cxn
+        .execute(`SELECT r.id, r.author_id, r.date FROM replies r`)
+        .then((a) => a as { author_id: string; id: string; date: Date }[]),
+      cxn
+        .execute(
+          `SELECT w.id, w.created_by, w.count, w.day
+      FROM wiki_contributions w`
+        )
+        .then(
+          (a) =>
+            a as { created_by: string; id: string; count: number; day: Date }[]
+        ),
+    ]).then(([work, users, replies, wikis]) => {
       cxn.destroy();
       const get = () => {
         const filteredData = (
@@ -139,23 +156,44 @@ export const loader: LoaderFunction = async ({ request }) => {
                   },
                 ])
                 .filter((w) => w.typeId)
-        ).filter(
-          (w) =>
-            !dimensionsHidden.some((d) => {
-              return w.typeId === d;
-            })
-        );
-        const groupedByType = filteredData.reduce((p, c) => {
-          if (!c.typeId) return p;
-          if (p[c.typeId]) {
-            p[c.typeId].add(c.id);
-          } else {
-            p[c.typeId] = new Set([c.id]);
-          }
-          return p;
-        }, {} as Record<string, Set<string>>);
+        )
+          .filter(
+            (w) =>
+              !dimensionsHidden.some((d) => {
+                return w.typeId === d;
+              })
+          )
+          .map((w) => ({ typeId: w.typeId, count: 1 }));
+        const filteredReplies = (
+          contributor === "everyone"
+            ? replies
+            : replies.filter((d) => d.author_id === contributor)
+        ).map(() => ({
+          typeId: "replies" as const,
+          count: 1,
+        }));
+        const filteredWikis = (
+          contributor === "everyone"
+            ? wikis
+            : wikis.filter((d) => d.created_by === contributor)
+        ).map((r) => ({
+          typeId: "wikis" as const,
+          count: r.count,
+        }));
+        const groupedByType = filteredData
+          .concat(filteredReplies)
+          .concat(filteredWikis)
+          .reduce((p, c) => {
+            if (!c.typeId) return p;
+            if (p[c.typeId]) {
+              p[c.typeId] += c.count;
+            } else {
+              p[c.typeId] = c.count;
+            }
+            return p;
+          }, {} as Record<string, number>);
         const maxWork = Object.values(groupedByType).reduce(
-          (p, c) => (c.size > p ? c.size : p),
+          (p, c) => (c > p ? c : p),
           1
         );
         const keys = DIMENSIONS.map((d) => d.id).filter(
@@ -166,10 +204,7 @@ export const loader: LoaderFunction = async ({ request }) => {
             keys.map((k) => [nameById[k], nameById[k]])
           ),
           radarData: Object.fromEntries(
-            keys.map((k) => [
-              nameById[k],
-              (groupedByType[k]?.size || 0) / maxWork,
-            ])
+            keys.map((k) => [nameById[k], (groupedByType[k] || 0) / maxWork])
           ),
         };
       };
