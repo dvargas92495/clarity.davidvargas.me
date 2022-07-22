@@ -192,13 +192,13 @@ export const loader: LoaderFunction = async ({ request }) => {
             }
             return p;
           }, {} as Record<string, number>);
-        const maxWork = Object.values(groupedByType).reduce(
-          (p, c) => (c > p ? c : p),
-          1
-        );
+
         const keys = DIMENSIONS.map((d) => d.id).filter(
           (d) => !dimensionsHidden.includes(d)
         );
+        const maxWork = keys
+          .map((k) => groupedByType[k] || 0)
+          .reduce((p, c) => (c > p ? c : p), 1);
         return {
           captions: Object.fromEntries(
             keys.map((k) => [nameById[k], nameById[k]])
