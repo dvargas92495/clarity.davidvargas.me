@@ -56,14 +56,7 @@ const BarView = () => {
           name="contribution"
           label="Contribution"
           defaultValue={contribution}
-          options={[
-            "all",
-            "tasks",
-            "projects",
-            "replies",
-            "wiki",
-            "goals",
-          ]}
+          options={["all", "tasks", "projects", "replies", "wiki", "goals"]}
           onChange={(e) =>
             setSearchParams(
               {
@@ -78,7 +71,7 @@ const BarView = () => {
           name="x"
           label="X Axis"
           defaultValue={x}
-          options={["count", "month", "tags", "contributor"]}
+          options={["month", "count", "tags", "contributor"]}
           onChange={(e) =>
             setSearchParams(
               {
@@ -111,7 +104,7 @@ const BarView = () => {
 export const loader: LoaderFunction = async ({ request }) => {
   const { searchParams } = new URL(request.url);
   const contributor = searchParams.get("contributor") || "everyone";
-  const x = searchParams.get("x") || "count";
+  const x = searchParams.get("x") || "month";
   const contribution = searchParams.get("contribution") || "all";
   const minimum = searchParams.get("minimum") || 0;
   // @ts-ignore
