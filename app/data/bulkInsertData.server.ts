@@ -4,7 +4,7 @@ import getMysqlConnection, {
 import AWS from "aws-sdk";
 import type mysql from "mysql2";
 import FILE_TYPES from "~/enums/fileTypes";
-import WORK_TYPES, { idByWork, workById } from "~/enums/workTypes";
+import WORK_TYPES, { idByWork } from "~/enums/workTypes";
 import { z } from "zod";
 
 const s3 = new AWS.S3({ region: process.env.AWS_REGION });
